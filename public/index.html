@@ -1,0 +1,1280 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>忖度リバーシ</title>
+  <meta name="description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="忖度リバーシ" />
+  <meta property="og:description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
+  <meta property="og:image" content="/ogp.png" />
+  <meta property="og:site_name" content="忖度リバーシ" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="忖度リバーシ" />
+  <meta name="twitter:description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
+  <meta name="twitter:image" content="/ogp.png" />
+  <style>
+    :root {
+      --bg: #eef5f0;
+      --panel: #ffffff;
+      --text: #1e2a22;
+      --muted: #5b6d60;
+      --board-dark: #1b6d3c;
+      --board-light: #278948;
+      --accent: #2d8b57;
+      --accent-strong: #1e7345;
+      --ring: rgba(45, 139, 87, 0.32);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, #f8fcf9 0%, transparent 35%),
+        radial-gradient(circle at 90% 0%, #e4efe7 0%, transparent 32%),
+        linear-gradient(180deg, #f2f8f4 0%, #eaf2ed 100%);
+    }
+    h2 { margin: 0 0 16px; font-size: 34px; letter-spacing: 0.02em; }
+    .wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+    .board-pane {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid #d7e4db;
+      box-shadow: 0 12px 30px rgba(19, 46, 30, 0.08);
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 40px);
+      grid-template-rows: repeat(8, 40px);
+      gap: 2px;
+      user-select: none;
+      padding: 6px;
+      border-radius: 10px;
+      background: #145332;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .cell {
+      width: 40px; height: 40px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: linear-gradient(135deg, var(--board-light), var(--board-dark));
+      position: relative;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: filter 120ms ease;
+    }
+    .cell:hover:not(:disabled) { filter: brightness(1.07); }
+    .cell:disabled { cursor: default; opacity: 0.95; }
+    .disc {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15);
+    }
+    .black { background: #111; }
+    .white { background: #f5f5f5; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15); }
+    .placed { animation: placePop 180ms ease-out; }
+    .flip-to-black { animation: flipToBlack 260ms ease-in-out both; }
+    .flip-to-white { animation: flipToWhite 260ms ease-in-out both; }
+    @keyframes placePop {
+      0% { transform: scale(0.55); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes flipToBlack {
+      0% { transform: rotateY(0deg); background: #f5f5f5; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15); }
+      49% { transform: rotateY(90deg); background: #f5f5f5; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15); }
+      51% { transform: rotateY(90deg); background: #111; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+      100% { transform: rotateY(0deg); background: #111; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+    }
+    @keyframes flipToWhite {
+      0% { transform: rotateY(0deg); background: #111; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+      49% { transform: rotateY(90deg); background: #111; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.15); }
+      51% { transform: rotateY(90deg); background: #f5f5f5; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15); }
+      100% { transform: rotateY(0deg); background: #f5f5f5; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15); }
+    }
+    .hint {
+      position: absolute;
+      inset: 14px;
+      border-radius: 50%;
+      background: rgba(255, 232, 138, 0.85);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.35);
+      pointer-events: none;
+    }
+    .panel {
+      min-width: 280px;
+      background: var(--panel);
+      border-radius: 16px;
+      border: 1px solid #d7e4db;
+      box-shadow: 0 12px 30px rgba(19, 46, 30, 0.08);
+      padding: 14px 16px;
+    }
+    .row { margin: 8px 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .ranking-title { margin-top: 14px; font-weight: 800; }
+    .ranking-period { font-size: 13px; color: var(--muted); }
+    .ranking-status { font-size: 12px; color: var(--muted); }
+    .ranking-list {
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+    .ranking-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: #f2f7f4;
+      border: 1px solid #dce9e0;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 14px;
+    }
+    .rank-pos { font-weight: 700; min-width: 36px; color: #355743; }
+    .rank-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rank-score { font-weight: 700; color: #214d33; }
+    .rank-empty {
+      font-size: 13px;
+      color: var(--muted);
+      background: #f6faf7;
+      border: 1px dashed #d3e4d8;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .coach-wrap {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #dce9e0;
+    }
+    .coach-title { font-weight: 800; margin-bottom: 6px; }
+    .coach-summary { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    .coach-board {
+      display: grid;
+      grid-template-columns: repeat(8, 28px);
+      grid-template-rows: repeat(8, 28px);
+      gap: 2px;
+      padding: 5px;
+      border-radius: 8px;
+      background: #145332;
+      width: max-content;
+    }
+    .coach-cell {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: linear-gradient(135deg, var(--board-light), var(--board-dark));
+      position: relative;
+      border-radius: 2px;
+    }
+    .coach-mark {
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      border: 2px solid #ffd166;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 0 8px rgba(255,209,102,0.5);
+      pointer-events: none;
+    }
+    .coach-mark.best {
+      border-color: #5de5a8;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 0 8px rgba(93,229,168,0.55);
+    }
+    .coach-mark.actual {
+      border-color: #ffb15a;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 0 8px rgba(255,177,90,0.55);
+    }
+    .coach-legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: -1px;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+    .dot.actual { background: #ffb15a; }
+    .dot.best { background: #5de5a8; }
+
+    .controls { margin-top: 10px; display: grid; gap: 8px; }
+    #resetBtn {
+      appearance: none;
+      border: none;
+      background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(33, 107, 67, 0.3);
+      transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+    }
+    #resetBtn:hover { filter: brightness(1.04); box-shadow: 0 10px 20px rgba(33, 107, 67, 0.34); }
+    #resetBtn:active { transform: translateY(1px); box-shadow: 0 5px 10px rgba(33, 107, 67, 0.3); }
+    #resetBtn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .toggle input[type="checkbox"] {
+      appearance: none;
+      width: 46px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid #b6cabd;
+      background: #d7e4db;
+      position: relative;
+      transition: background 150ms ease, border-color 150ms ease;
+      cursor: pointer;
+    }
+    .toggle input[type="checkbox"]::before {
+      content: "";
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: transform 150ms ease;
+    }
+    .toggle input[type="checkbox"]:checked {
+      background: #2f9a60;
+      border-color: #2f9a60;
+    }
+    .toggle input[type="checkbox"]:checked::before { transform: translateX(18px); }
+    .toggle input[type="checkbox"]:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    @media (max-width: 720px) {
+      h2 { font-size: 30px; }
+      body { padding: 14px; }
+      .panel, .board-pane { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <h2>忖度リバーシ</h2>
+  <div class="wrap">
+    <div class="board-pane">
+      <div id="board" aria-label="reversi board"></div>
+      <div class="controls">
+        <button id="resetBtn">リセット</button>
+        <label class="toggle"><input id="modeToggle" type="checkbox" checked /><span>忖度モード</span></label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row"><b>手番:</b> <span id="turnLabel"></span></div>
+      <div class="row"><b>黒(あなた):</b> <span id="blackCount"></span>　
+        <b>白(CPU):</b> <span id="whiteCount"></span></div>
+
+      <div class="row" id="concessionRow" style="display:none;">
+        <b>CPU譲歩スコア(累計):</b> <span id="concessionTotal" class="mono"></span>
+      </div>
+      <div class="row ranking-title">週間ランキング（忖度モード）</div>
+      <div class="row ranking-period" id="rankingPeriod"></div>
+      <div class="row ranking-status" id="rankingStatus"></div>
+      <ol class="ranking-list" id="rankingList"></ol>
+      <div class="coach-wrap" id="coachRow" style="display:none;">
+        <div class="coach-title">ワンポイント指導</div>
+        <div class="coach-summary" id="coachSummary"></div>
+        <div class="coach-board" id="coachBoard"></div>
+        <div class="coach-legend">
+          <span><span class="dot actual"></span>実際に打った手</span>
+          <span><span class="dot best"></span>おすすめの手</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/** =====================
+ * Bitboard utilities (BigInt)
+ * A1 = bit 0 (top-left), H8 = bit 63 (bottom-right)
+ * idx = x + y*8 where x:0..7 (A..H), y:0..7 (1..8)
+ * Player = Black, CPU = White
+ * We keep P = CPU stones (White), O = Player stones (Black)
+ * ===================== */
+const FULL = (1n << 64n) - 1n;
+
+const FILE_A = 0x0101010101010101n;
+const FILE_H = 0x8080808080808080n;
+const NOT_FILE_A = FULL ^ FILE_A;
+const NOT_FILE_H = FULL ^ FILE_H;
+
+// north is +8 (downwards on screen? careful!)
+// With A1 top-left, increasing y goes "south" on the screen.
+// We'll define:
+//  - E: +1 (x+1)
+//  - W: -1
+//  - S: +8 (y+1, down)
+//  - N: -8 (y-1, up)
+const shiftS  = (x) => (x << 8n) & FULL;
+const shiftN  = (x) => (x >> 8n);
+const shiftE  = (x) => (x & NOT_FILE_H) << 1n;
+const shiftW  = (x) => (x & NOT_FILE_A) >> 1n;
+const shiftSE = (x) => (x & NOT_FILE_H) << 9n;
+const shiftSW = (x) => (x & NOT_FILE_A) << 7n;
+const shiftNE = (x) => (x & NOT_FILE_H) >> 7n;
+const shiftNW = (x) => (x & NOT_FILE_A) >> 9n;
+
+const SHIFTS = [shiftN, shiftS, shiftE, shiftW, shiftNE, shiftNW, shiftSE, shiftSW];
+
+/** =====================
+ * Firebase / Ranking
+ * ===================== */
+const FIREBASE_CONFIG = window.__FIREBASE_CONFIG__ || {
+  apiKey: "AIzaSyAcKY2CDRxyi3jMcD4TI7ajYyjwLB5wWq4",
+  authDomain: "sontaku-reversi.firebaseapp.com",
+  databaseURL: "https://sontaku-reversi-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sontaku-reversi",
+  storageBucket: "sontaku-reversi.firebasestorage.app",
+  messagingSenderId: "975505089063",
+  appId: "1:975505089063:web:c4f22c74fcc635094f2402",
+};
+
+function hasFirebaseConfig(cfg) {
+  return !!(cfg && cfg.apiKey && cfg.projectId && cfg.databaseURL);
+}
+
+let rankingDb = null;
+if (window.firebase && hasFirebaseConfig(FIREBASE_CONFIG)) {
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  rankingDb = firebase.database();
+} else {
+  console.warn("Firebase config is missing. Set window.__FIREBASE_CONFIG__ in public/index.html.");
+}
+
+function getWeekStartSunday(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay()); // Sunday-start
+  return d;
+}
+
+function formatMonthDay(date) {
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function formatWeekKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
+}
+
+function currentWeekInfo() {
+  const start = getWeekStartSunday(new Date());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end, key: formatWeekKey(start) };
+}
+
+function rankingComparator(a, b) {
+  if (b.score !== a.score) return b.score - a.score;
+  return a.ts - b.ts;
+}
+
+function normalizeName(name) {
+  const trimmed = String(name || "").trim();
+  if (!trimmed) return "ゲスト";
+  return trimmed;
+}
+
+function isValidName(name) {
+  const n = normalizeName(name);
+  return Array.from(n).length <= 20;
+}
+
+function askRankingName() {
+  while (true) {
+    const input = window.prompt("週間ランキング5位以内です。名前を入力してください（20文字以内）", "ゲスト");
+    if (input === null) return "ゲスト";
+    const name = normalizeName(input);
+    if (!isValidName(name)) {
+      alert("名前は20文字以内で入力してください。");
+      continue;
+    }
+    return name;
+  }
+}
+
+function popcount64(bb) {
+  let c = 0;
+  while (bb) { bb &= (bb - 1n); c++; }
+  return c;
+}
+function lsb(bb) { return bb & (-bb); }
+function bitsToArray(bb) {
+  const arr = [];
+  while (bb) { const b = lsb(bb); arr.push(b); bb ^= b; }
+  return arr;
+}
+
+/** =====================
+ * Move generation
+ * ===================== */
+function legalMoves(P, O) {
+  const empty = (~(P | O)) & FULL;
+  let moves = 0n;
+  for (const sh of SHIFTS) {
+    let t = sh(P) & O;
+    for (let i = 0; i < 5; i++) t |= sh(t) & O;
+    moves |= sh(t) & empty;
+  }
+  return moves;
+}
+
+/** flips for a single move (single-bit BigInt) */
+function flipsForMove(P, O, move) {
+  let flips = 0n;
+
+  for (const sh of SHIFTS) {
+    let captured = 0n;
+
+    let cur = sh(move);
+    if (!(cur & O)) continue;
+
+    while (cur & O) {
+      captured |= cur;
+      cur = sh(cur);
+      if (!cur) break;
+    }
+    if (cur & P) flips |= captured;
+  }
+  return flips;
+}
+
+function applyMove(P, O, move) {
+  const f = flipsForMove(P, O, move);
+  const P2 = P | move | f;
+  const O2 = O & ~f;
+  return { P: P2, O: O2 };
+}
+
+/** =====================
+ * Evaluation (CPU positive)
+ * ===================== */
+const ENDGAME_SOLVE_EMPTY = 10;
+const TT_LIMIT = 250000;
+const searchTT = new Map();
+const exactTT = new Map();
+
+const corners = [0n, 7n, 56n, 63n];
+const cornerX = [9n, 14n, 49n, 54n]; // diagonal to corners (X-squares)
+const cornerC = [
+  [1n, 8n],    // around A1
+  [6n, 15n],   // around H1
+  [48n, 57n],  // around A8
+  [55n, 62n],  // around H8
+];
+
+function neighborMask(bb) {
+  return shiftN(bb) | shiftS(bb) | shiftE(bb) | shiftW(bb)
+    | shiftNE(bb) | shiftNW(bb) | shiftSE(bb) | shiftSW(bb);
+}
+
+function phaseWeights(occupied) {
+  // early/mid/late blend
+  let early = (44 - occupied) / 20;
+  if (early < 0) early = 0;
+  if (early > 1) early = 1;
+
+  let late = (occupied - 40) / 20;
+  if (late < 0) late = 0;
+  if (late > 1) late = 1;
+
+  let mid = 1 - early - late;
+  if (mid < 0) mid = 0;
+
+  return {
+    disc: 0 * early + 6 * mid + 20 * late,
+    mobility: 9 * early + 6 * mid + 2 * late,
+    corner: 26 * early + 30 * mid + 34 * late,
+    // Stronger midgame penalties for risky squares near empty corners.
+    dangerX: -(52 * early + 36 * mid + 8 * late),
+    dangerC: -(26 * early + 18 * mid + 5 * late),
+    frontier: -(8 * early + 6 * mid + 2 * late),
+    potential: 7 * early + 4 * mid + 1 * late,
+    stable: 8 * early + 14 * mid + 22 * late,
+    parity: 0 * early + 2 * mid + 8 * late,
+  };
+}
+
+function stableEdgeCount(side) {
+  let count = 0;
+  const counted = new Set();
+
+  function addIfSide(idx) {
+    const b = 1n << BigInt(idx);
+    if ((side & b) !== 0n) {
+      counted.add(idx);
+      return true;
+    }
+    return false;
+  }
+
+  // A1 corner
+  if (addIfSide(0)) {
+    for (let x = 1; x <= 7; x++) if (!addIfSide(x)) break;
+    for (let y = 1; y <= 7; y++) if (!addIfSide(y * 8)) break;
+  }
+  // H1 corner
+  if (addIfSide(7)) {
+    for (let x = 6; x >= 0; x--) if (!addIfSide(x)) break;
+    for (let y = 1; y <= 7; y++) if (!addIfSide(7 + y * 8)) break;
+  }
+  // A8 corner
+  if (addIfSide(56)) {
+    for (let x = 1; x <= 7; x++) if (!addIfSide(56 + x)) break;
+    for (let y = 6; y >= 0; y--) if (!addIfSide(y * 8)) break;
+  }
+  // H8 corner
+  if (addIfSide(63)) {
+    for (let x = 6; x >= 0; x--) if (!addIfSide(56 + x)) break;
+    for (let y = 6; y >= 0; y--) if (!addIfSide(7 + y * 8)) break;
+  }
+
+  count += counted.size;
+  return count;
+}
+
+function evalBoard(P, O, cpuTurn) {
+  const discDiff = popcount64(P) - popcount64(O);
+
+  const mobP = popcount64(legalMoves(P, O));
+  const mobO = popcount64(legalMoves(O, P));
+  const mobDiff = mobP - mobO;
+
+  const occupiedBB = P | O;
+  const occupied = popcount64(occupiedBB);
+  const empty = (~occupiedBB) & FULL;
+  const emptyCount = 64 - occupied;
+  const w = phaseWeights(occupied);
+
+  let cornerDiff = 0;
+  let dangerXDiff = 0; // + means CPU has more dangerous X stones near empty corners
+  let dangerCDiff = 0; // + means CPU has more dangerous C stones near empty corners
+
+  for (let i = 0; i < 4; i++) {
+    const cBit = 1n << corners[i];
+    if (P & cBit) cornerDiff += 1;
+    else if (O & cBit) cornerDiff -= 1;
+    else {
+      const xBit = 1n << cornerX[i];
+      if (P & xBit) dangerXDiff += 1;
+      else if (O & xBit) dangerXDiff -= 1;
+
+      for (const cIdx of cornerC[i]) {
+        const cAdjBit = 1n << cIdx;
+        if (P & cAdjBit) dangerCDiff += 1;
+        else if (O & cAdjBit) dangerCDiff -= 1;
+      }
+    }
+  }
+
+  const frontierP = popcount64(P & neighborMask(empty));
+  const frontierO = popcount64(O & neighborMask(empty));
+  const frontierDiff = frontierP - frontierO;
+
+  const potentialP = popcount64(empty & neighborMask(O));
+  const potentialO = popcount64(empty & neighborMask(P));
+  const potentialDiff = potentialP - potentialO;
+
+  const stableDiff = stableEdgeCount(P) - stableEdgeCount(O);
+
+  const paritySign = (emptyCount % 2 === 1)
+    ? (cpuTurn ? 1 : -1)
+    : (cpuTurn ? -1 : 1);
+
+  return discDiff * w.disc
+    + mobDiff * w.mobility
+    + cornerDiff * w.corner
+    + dangerXDiff * w.dangerX
+    + dangerCDiff * w.dangerC
+    + frontierDiff * w.frontier
+    + potentialDiff * w.potential
+    + stableDiff * w.stable
+    + paritySign * w.parity;
+}
+
+function makeTTKey(P, O, depth, cpuTurn) {
+  return `${P.toString(16)}_${O.toString(16)}_${depth}_${cpuTurn ? 1 : 0}`;
+}
+
+function minimax(P, O, depth, cpuTurn, tt) {
+  if (depth === 0) return evalBoard(P, O, cpuTurn);
+
+  const key = makeTTKey(P, O, depth, cpuTurn);
+  if (tt.has(key)) return tt.get(key);
+
+  const movesBB = cpuTurn ? legalMoves(P, O) : legalMoves(O, P);
+  if (movesBB === 0n) {
+    const oppMovesBB = cpuTurn ? legalMoves(O, P) : legalMoves(P, O);
+    if (oppMovesBB === 0n) return evalBoard(P, O, cpuTurn);
+    const passVal = minimax(P, O, depth, !cpuTurn, tt); // pass
+    tt.set(key, passVal);
+    return passVal;
+  }
+
+  const moves = bitsToArray(movesBB);
+  if (cpuTurn) {
+    let best = -Infinity;
+    for (const mv of moves) {
+      const next = applyMove(P, O, mv);
+      const v = minimax(next.P, next.O, depth - 1, false, tt);
+      if (v > best) best = v;
+    }
+    if (tt.size > TT_LIMIT) tt.clear();
+    tt.set(key, best);
+    return best;
+  }
+
+  let best = Infinity;
+  for (const mv of moves) {
+    const next = applyMove(O, P, mv); // player move
+    const v = minimax(next.O, next.P, depth - 1, true, tt);
+    if (v < best) best = v;
+  }
+  if (tt.size > TT_LIMIT) tt.clear();
+  tt.set(key, best);
+  return best;
+}
+
+function solveExact(P, O, cpuTurn, tt) {
+  const key = makeTTKey(P, O, 99, cpuTurn);
+  if (tt.has(key)) return tt.get(key);
+
+  const movesBB = cpuTurn ? legalMoves(P, O) : legalMoves(O, P);
+  if (movesBB === 0n) {
+    const oppMovesBB = cpuTurn ? legalMoves(O, P) : legalMoves(P, O);
+    if (oppMovesBB === 0n) {
+      const exact = (popcount64(P) - popcount64(O)) * 1000;
+      tt.set(key, exact);
+      return exact;
+    }
+    const passVal = solveExact(P, O, !cpuTurn, tt); // pass
+    tt.set(key, passVal);
+    return passVal;
+  }
+
+  const moves = bitsToArray(movesBB);
+  if (cpuTurn) {
+    let best = -Infinity;
+    for (const mv of moves) {
+      const next = applyMove(P, O, mv);
+      const v = solveExact(next.P, next.O, false, tt);
+      if (v > best) best = v;
+    }
+    if (tt.size > TT_LIMIT) tt.clear();
+    tt.set(key, best);
+    return best;
+  }
+
+  let best = Infinity;
+  for (const mv of moves) {
+    const next = applyMove(O, P, mv);
+    const v = solveExact(next.O, next.P, true, tt);
+    if (v < best) best = v;
+  }
+  if (tt.size > TT_LIMIT) tt.clear();
+  tt.set(key, best);
+  return best;
+}
+
+function scoreMove(P, O, mv) {
+  const next = applyMove(P, O, mv); // CPU move first
+  const emptyAfter = 64 - popcount64(next.P | next.O);
+  if (emptyAfter <= ENDGAME_SOLVE_EMPTY) {
+    return solveExact(next.P, next.O, false, exactTT);
+  }
+  return minimax(next.P, next.O, 3, false, searchTT);
+}
+
+function moveCornerRiskPenalty(P, O, mv) {
+  // Only penalize in non-endgame; this is for sontaku-mode move preference.
+  const occupied = popcount64(P | O);
+  let antiEnd = (56 - occupied) / 20;
+  if (antiEnd < 0) antiEnd = 0;
+  if (antiEnd > 1) antiEnd = 1;
+  if (antiEnd === 0) return 0;
+
+  let penalty = 0;
+  for (let i = 0; i < 4; i++) {
+    const cBit = 1n << corners[i];
+    if (((P | O) & cBit) !== 0n) continue; // corner already fixed -> no risk penalty
+
+    const xBit = 1n << cornerX[i];
+    if ((mv & xBit) !== 0n) penalty += 95;
+
+    for (const cIdx of cornerC[i]) {
+      const cBitAdj = 1n << cIdx;
+      if ((mv & cBitAdj) !== 0n) penalty += 48;
+    }
+  }
+  return penalty * antiEnd;
+}
+
+/** =====================
+ * Sontaku selection + concession score
+ * - prefer best move under eval_after <= 0
+ * - if none, choose minimum eval_after
+ * - concession += max(0, best_eval - chosen_eval)
+ * ===================== */
+function chooseSontakuMove(P, O, concessionState) {
+  const movesBB = legalMoves(P, O);
+  if (!movesBB) return { move: 0n, bestEval: null, chosenEval: null, concession: 0 };
+
+  const moves = bitsToArray(movesBB);
+
+  let bestEval = -Infinity;
+
+  let hasNonPos = false;
+  let bestNonPosEval = -Infinity;
+  let bestNonPosAdjusted = -Infinity;
+  let bestNonPosMove = 0n;
+
+  let minEval = Infinity;
+  let minAdjustedEval = Infinity;
+  let minEvalMove = moves[0];
+
+  for (const mv of moves) {
+    const e = scoreMove(P, O, mv);
+    const adjusted = e - moveCornerRiskPenalty(P, O, mv);
+
+    if (e > bestEval) bestEval = e;
+
+    if (e <= 0) {
+      if (!hasNonPos || adjusted > bestNonPosAdjusted || (adjusted === bestNonPosAdjusted && e > bestNonPosEval)) {
+        hasNonPos = true;
+        bestNonPosEval = e;
+        bestNonPosAdjusted = adjusted;
+        bestNonPosMove = mv;
+      }
+    }
+    if (adjusted < minAdjustedEval || (adjusted === minAdjustedEval && e < minEval)) {
+      minEval = e;
+      minAdjustedEval = adjusted;
+      minEvalMove = mv;
+    }
+  }
+
+  let chosenMove, chosenEval;
+  if (hasNonPos) { chosenMove = bestNonPosMove; chosenEval = bestNonPosEval; }
+  else { chosenMove = minEvalMove; chosenEval = minEval; }
+
+  const concession = Math.max(0, bestEval - chosenEval);
+  concessionState.total += concession;
+  concessionState.turns += 1;
+
+  return { move: chosenMove, bestEval, chosenEval, concession };
+}
+
+/** =====================
+ * UI / Game state
+ * ===================== */
+const boardEl = document.getElementById('board');
+const resetBtn = document.getElementById('resetBtn');
+const modeToggle = document.getElementById('modeToggle');
+const turnLabel = document.getElementById('turnLabel');
+const blackCount = document.getElementById('blackCount');
+const whiteCount = document.getElementById('whiteCount');
+const concessionRow = document.getElementById('concessionRow');
+const concessionTotalEl = document.getElementById('concessionTotal');
+const rankingPeriodEl = document.getElementById('rankingPeriod');
+const rankingStatusEl = document.getElementById('rankingStatus');
+const rankingListEl = document.getElementById('rankingList');
+const coachRow = document.getElementById('coachRow');
+const coachSummaryEl = document.getElementById('coachSummary');
+const coachBoardEl = document.getElementById('coachBoard');
+
+const concessionState = { total: 0, turns: 0 };
+
+let P = 0n; // CPU (white)
+let O = 0n; // Player (black)
+let turn = 'BLACK'; // BLACK then WHITE
+let gameOver = false;
+let lastAnim = null; // { flipped: BigInt, placed: BigInt, to: 'BLACK'|'WHITE' }
+let sontakuMode = true;
+let weekTopEntries = [];
+let rankingWeekKey = "";
+let worstPlayerMistake = null; // { loss, bestMove, actualMove, boardP, boardO, bestEval, actualEval }
+
+function bitAt(x, y) {
+  const idx = BigInt(x + y * 8);
+  return 1n << idx;
+}
+function hasBit(bb, x, y) { return (bb & bitAt(x, y)) !== 0n; }
+function bitIndex(mv) {
+  let t = mv;
+  let i = 0;
+  while ((t & 1n) === 0n) { t >>= 1n; i++; }
+  return i;
+}
+function bitToCoord(mv) {
+  const idx = bitIndex(mv);
+  const x = idx % 8;
+  const y = Math.floor(idx / 8);
+  return `${String.fromCharCode(65 + x)}${y + 1}`;
+}
+
+function scorePlayerMove(P, O, mv) {
+  // Player (black) moves, then CPU turn.
+  const next = applyMove(O, P, mv); // next.O = CPU, next.P = Player
+  const cpuP = next.O;
+  const playerO = next.P;
+  const emptyAfter = 64 - popcount64(cpuP | playerO);
+  if (emptyAfter <= ENDGAME_SOLVE_EMPTY) {
+    return solveExact(cpuP, playerO, true, exactTT);
+  }
+  return minimax(cpuP, playerO, 3, true, searchTT);
+}
+
+function maybeTrackPlayerMistake(Pcpu, Oplayer, chosenMv, legalMovesBB) {
+  const moves = bitsToArray(legalMovesBB);
+  if (moves.length <= 1) return;
+
+  let bestEval = Infinity;   // lower CPU eval is better for player
+  let bestMove = moves[0];
+  let actualEval = null;
+
+  for (const mv of moves) {
+    const e = scorePlayerMove(Pcpu, Oplayer, mv);
+    if (e < bestEval) {
+      bestEval = e;
+      bestMove = mv;
+    }
+    if (mv === chosenMv) actualEval = e;
+  }
+  if (actualEval === null) return;
+
+  const loss = actualEval - bestEval;
+  if (loss <= 0) return;
+
+  if (!worstPlayerMistake || loss > worstPlayerMistake.loss) {
+    worstPlayerMistake = {
+      loss,
+      bestMove,
+      actualMove: chosenMv,
+      boardP: Pcpu,
+      boardO: Oplayer,
+      bestEval,
+      actualEval,
+    };
+  }
+}
+
+function renderCoachBoard(snapshot) {
+  coachBoardEl.innerHTML = "";
+  const { boardP, boardO, bestMove, actualMove } = snapshot;
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const b = bitAt(x, y);
+      const cell = document.createElement("div");
+      cell.className = "coach-cell";
+
+      const isBlack = (boardO & b) !== 0n;
+      const isWhite = (boardP & b) !== 0n;
+      if (isBlack || isWhite) {
+        const d = document.createElement("div");
+        d.className = `disc ${isBlack ? "black" : "white"}`;
+        d.style.inset = "4px";
+        cell.appendChild(d);
+      }
+      if ((actualMove & b) !== 0n) {
+        const mark = document.createElement("div");
+        mark.className = "coach-mark actual";
+        cell.appendChild(mark);
+      }
+      if ((bestMove & b) !== 0n) {
+        const mark = document.createElement("div");
+        mark.className = "coach-mark best";
+        cell.appendChild(mark);
+      }
+      coachBoardEl.appendChild(cell);
+    }
+  }
+}
+
+function showCoachingIfNeeded(playerWon, playerLost) {
+  const shouldShow = sontakuMode || (!sontakuMode && playerLost);
+  if (!shouldShow) {
+    coachRow.style.display = "none";
+    return;
+  }
+  coachRow.style.display = "";
+
+  if (!worstPlayerMistake) {
+    coachSummaryEl.textContent = "今回の対局では、大きな改善候補のある手は見つかりませんでした。";
+    coachBoardEl.innerHTML = "";
+    return;
+  }
+
+  const m = worstPlayerMistake;
+  coachSummaryEl.textContent =
+    `この局面では ${bitToCoord(m.actualMove)} より ${bitToCoord(m.bestMove)} が有力でした（評価差 ${m.loss.toFixed(1)}）。`;
+  renderCoachBoard(m);
+}
+
+function setRankingStatus() {
+  if (!rankingDb) {
+    rankingStatusEl.textContent = "Firebase未設定のためランキング保存は無効です。";
+    return;
+  }
+  if (!sontakuMode) {
+    rankingStatusEl.textContent = "通常モードはランキング対象外です。";
+    return;
+  }
+  rankingStatusEl.textContent = "忖度モードで勝利したときのみ記録されます。";
+}
+
+function renderRankingList(entries) {
+  if (!entries.length) {
+    rankingListEl.innerHTML = '<li class="rank-empty">まだ記録がありません</li>';
+    return;
+  }
+
+  rankingListEl.innerHTML = entries.slice(0, 5).map((e, i) => {
+    const safeName = e.name
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+    return `<li class="ranking-item"><span class="rank-pos">${i + 1}位</span><span class="rank-name">${safeName}</span><span class="rank-score">${e.score}</span></li>`;
+  }).join("");
+}
+
+async function fetchWeeklyRanking() {
+  const week = currentWeekInfo();
+  rankingWeekKey = week.key;
+  rankingPeriodEl.textContent = `${formatMonthDay(week.start)}〜${formatMonthDay(week.end)}`;
+  setRankingStatus();
+
+  if (!rankingDb) {
+    weekTopEntries = [];
+    renderRankingList([]);
+    return [];
+  }
+
+  const snap = await rankingDb.ref(`weeklyRankings/${week.key}`)
+    .orderByChild("score")
+    .limitToLast(20)
+    .once("value");
+
+  const rows = [];
+  snap.forEach((child) => {
+    const v = child.val() || {};
+    if (v.mode !== "sontaku" || v.won !== true) return;
+    if (typeof v.score !== "number" || typeof v.ts !== "number") return;
+    if (typeof v.name !== "string") return;
+    rows.push({
+      name: normalizeName(v.name),
+      score: v.score,
+      ts: v.ts,
+    });
+  });
+
+  rows.sort(rankingComparator);
+  weekTopEntries = rows.slice(0, 5);
+  renderRankingList(weekTopEntries);
+  return weekTopEntries;
+}
+
+function wouldRankTop5(score, nowTs, entries) {
+  const candidates = entries.slice();
+  candidates.push({ name: "TMP", score, ts: nowTs });
+  candidates.sort(rankingComparator);
+  const top = candidates.slice(0, 5);
+  return top.some((e) => e.name === "TMP" && e.score === score && e.ts === nowTs);
+}
+
+async function trySubmitWeeklyRanking(score) {
+  if (!rankingDb || !sontakuMode) return;
+
+  const nowTs = Date.now();
+  const top = await fetchWeeklyRanking();
+  if (!wouldRankTop5(score, nowTs, top)) return;
+
+  const name = askRankingName();
+  const safeName = normalizeName(name);
+  if (!isValidName(safeName)) return;
+
+  await rankingDb.ref(`weeklyRankings/${rankingWeekKey}`).push({
+    name: safeName,
+    score: Number(score),
+    mode: "sontaku",
+    won: true,
+    ts: nowTs,
+  });
+
+  await fetchWeeklyRanking();
+}
+
+function resetGame() {
+  // Standard initial: black at D4,E5 ; white at E4,D5 (in usual coords)
+  // With A1 top-left, coords:
+  // D4 => x=3,y=3 ; E5 => x=4,y=4 ; E4 => x=4,y=3 ; D5 => x=3,y=4
+  O = bitAt(3,3) | bitAt(4,4); // Black
+  P = bitAt(4,3) | bitAt(3,4); // White
+  turn = 'BLACK';
+  gameOver = false;
+  concessionState.total = 0;
+  concessionState.turns = 0;
+  concessionRow.style.display = 'none';
+  coachRow.style.display = 'none';
+  worstPlayerMistake = null;
+  lastAnim = null;
+  render();
+}
+
+function log(msg) {
+  console.log(msg);
+}
+
+function currentLegalMoves() {
+  if (turn === 'BLACK') return legalMoves(O, P); // player as "P" for move gen
+  return legalMoves(P, O);
+}
+
+function render() {
+  const black = popcount64(O);
+  const white = popcount64(P);
+  blackCount.textContent = String(black);
+  whiteCount.textContent = String(white);
+  if (concessionRow.style.display !== 'none') {
+    concessionTotalEl.textContent = String(Math.round(concessionState.total));
+  }
+  setRankingStatus();
+
+  if (gameOver) {
+    turnLabel.textContent = '終了';
+  } else {
+    turnLabel.textContent = (turn === 'BLACK') ? '黒（あなた）' : '白（CPU）';
+  }
+
+  const movesBB = (!gameOver && turn === 'BLACK') ? legalMoves(O, P) : 0n;
+
+  boardEl.innerHTML = '';
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const cell = document.createElement('button');
+      cell.className = 'cell';
+      cell.type = 'button';
+      cell.dataset.x = String(x);
+      cell.dataset.y = String(y);
+
+      const b = bitAt(x, y);
+      const isBlack = (O & b) !== 0n;
+      const isWhite = (P & b) !== 0n;
+      const isEmpty = !isBlack && !isWhite;
+
+      if (isBlack) {
+        const d = document.createElement('div');
+        d.className = 'disc black';
+        if (lastAnim && (lastAnim.placed & b) !== 0n && lastAnim.to === 'BLACK') {
+          d.classList.add('placed');
+        } else if (lastAnim && (lastAnim.flipped & b) !== 0n && lastAnim.to === 'BLACK') {
+          d.classList.add('flip-to-black');
+        }
+        cell.appendChild(d);
+        cell.disabled = true;
+      } else if (isWhite) {
+        const d = document.createElement('div');
+        d.className = 'disc white';
+        if (lastAnim && (lastAnim.placed & b) !== 0n && lastAnim.to === 'WHITE') {
+          d.classList.add('placed');
+        } else if (lastAnim && (lastAnim.flipped & b) !== 0n && lastAnim.to === 'WHITE') {
+          d.classList.add('flip-to-white');
+        }
+        cell.appendChild(d);
+        cell.disabled = true;
+      } else {
+        // hint legal moves for player
+        if ((movesBB & b) !== 0n) {
+          const h = document.createElement('div');
+          h.className = 'hint';
+          cell.appendChild(h);
+          cell.disabled = false;
+        } else {
+          cell.disabled = true;
+        }
+      }
+
+      cell.addEventListener('click', onCellClick);
+      boardEl.appendChild(cell);
+    }
+  }
+  lastAnim = null;
+}
+
+function endIfNoMoves() {
+  const blackMoves = legalMoves(O, P);
+  const whiteMoves = legalMoves(P, O);
+
+  if (blackMoves === 0n && whiteMoves === 0n) {
+    gameOver = true;
+
+    const black = popcount64(O);
+    const white = popcount64(P);
+
+    if (black > white) {
+      // Player win: show concession score
+      concessionRow.style.display = '';
+      concessionTotalEl.textContent = String(Math.round(concessionState.total));
+      log(`試合終了: 黒(あなた) ${black} - 白(CPU) ${white} で勝ち！`);
+      log(`あなたのスコア（CPU譲歩度）: ${Math.round(concessionState.total)}`);
+      if (sontakuMode) {
+        void trySubmitWeeklyRanking(Math.round(concessionState.total));
+      }
+      showCoachingIfNeeded(true, false);
+    } else if (black < white) {
+      concessionRow.style.display = 'none';
+      log(`試合終了: 黒(あなた) ${black} - 白(CPU) ${white} で負け…`);
+      log(`（スコア表示は勝利時のみ）`);
+      showCoachingIfNeeded(false, true);
+    } else {
+      concessionRow.style.display = 'none';
+      log(`試合終了: 引き分け ${black} - ${white}`);
+      log(`（スコア表示は勝利時のみ）`);
+      showCoachingIfNeeded(false, false);
+    }
+    render();
+    return true;
+  }
+  return false;
+}
+
+function passIfNeeded() {
+  if (gameOver) return;
+
+  if (turn === 'BLACK') {
+    const m = legalMoves(O, P);
+    if (m === 0n) {
+      log('黒（あなた）はパス（打てる手がありません）');
+      turn = 'WHITE';
+      render();
+      setTimeout(cpuMove, 0);
+    }
+  } else {
+    const m = legalMoves(P, O);
+    if (m === 0n) {
+      log('白（CPU）はパス（打てる手がありません）');
+      turn = 'BLACK';
+      render();
+    }
+  }
+}
+
+function onCellClick(e) {
+  if (gameOver || turn !== 'BLACK') return;
+
+  const x = Number(e.currentTarget.dataset.x);
+  const y = Number(e.currentTarget.dataset.y);
+  const mv = bitAt(x, y);
+
+  const movesBB = legalMoves(O, P);
+  if ((movesBB & mv) === 0n) return;
+  maybeTrackPlayerMistake(P, O, mv, movesBB);
+
+  // Apply player's move: treat player as "P" in apply, but our stored is O=player, P=cpu
+  // So for black's move, we compute flips vs white and update O/P accordingly.
+  const f = flipsForMove(O, P, mv);
+  O = O | mv | f;
+  P = P & ~f;
+  lastAnim = { flipped: f, placed: mv, to: 'BLACK' };
+
+  log(`黒が着手: (${String.fromCharCode(65 + x)}${y + 1})`);
+  turn = 'WHITE';
+  render();
+
+  if (endIfNoMoves()) return;
+  setTimeout(cpuMove, 280);
+}
+
+function cpuMove() {
+  if (gameOver || turn !== 'WHITE') return;
+
+  const movesBB = legalMoves(P, O);
+  if (movesBB === 0n) {
+    passIfNeeded();
+    endIfNoMoves();
+    return;
+  }
+
+  let r;
+  if (sontakuMode) {
+    r = chooseSontakuMove(P, O, concessionState);
+  } else {
+    const moves = bitsToArray(movesBB);
+    let bestEval = -Infinity;
+    let bestMove = moves[0];
+    for (const mv of moves) {
+      const e = scoreMove(P, O, mv);
+      if (e > bestEval) {
+        bestEval = e;
+        bestMove = mv;
+      }
+    }
+    r = { move: bestMove, bestEval, chosenEval: bestEval, concession: 0 };
+  }
+  const mv = r.move;
+
+  const idx = bitIndex(mv);
+
+  const x = idx % 8;
+  const y = Math.floor(idx / 8);
+
+  const next = applyMove(P, O, mv);
+  const flipped = flipsForMove(P, O, mv);
+  P = next.P;
+  O = next.O;
+  lastAnim = { flipped, placed: mv, to: 'WHITE' };
+
+  if (sontakuMode) {
+    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  eval(best=${r.bestEval}, chosen=${r.chosenEval}, concede=+${r.concession.toFixed(1)})`);
+  } else {
+    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  eval(best=${r.bestEval}, mode=normal)`);
+  }
+
+  turn = 'BLACK';
+  render();
+
+  if (endIfNoMoves()) return;
+  passIfNeeded();
+}
+
+resetBtn.addEventListener('click', resetGame);
+modeToggle.addEventListener('change', () => {
+  sontakuMode = modeToggle.checked;
+  render();
+});
+void fetchWeeklyRanking();
+resetGame();
+</script>
+</body>
+</html>

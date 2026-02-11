@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "weeklyRankings": {
+      "$weekKey": {
+        ".read": true,
+        ".indexOn": ["score", "ts"],
+        "$entryId": {
+          ".write": true,
+          ".validate": "newData.hasChildren(['name','score','mode','won','ts']) && newData.child('mode').val() === 'sontaku' && newData.child('won').val() === true && newData.child('score').isNumber() && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 20 && newData.child('ts').isNumber()"
+        }
+      }
+    }
+  }
+}
