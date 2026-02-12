@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <title>忖度リバーシ</title>
   <meta name="description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
   <meta property="og:type" content="website" />
@@ -14,6 +15,7 @@
   <meta name="twitter:title" content="忖度リバーシ" />
   <meta name="twitter:description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
   <meta name="twitter:image" content="/ogp.png" />
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8846921424800179" crossorigin="anonymous"></script>
   <style>
     :root {
       --bg: #eef5f0;
@@ -48,17 +50,22 @@
     }
     #board {
       display: grid;
-      grid-template-columns: repeat(8, 40px);
-      grid-template-rows: repeat(8, 40px);
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-rows: repeat(8, minmax(0, 1fr));
       gap: 2px;
       user-select: none;
+      width: min(100%, 346px);
+      aspect-ratio: 1 / 1;
       padding: 6px;
       border-radius: 10px;
       background: #145332;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+      margin: 0 auto;
+      overflow: hidden;
     }
     .cell {
-      width: 40px; height: 40px;
+      width: 100%;
+      height: 100%;
       border: 1px solid rgba(0,0,0,0.2);
       background: linear-gradient(135deg, var(--board-light), var(--board-dark));
       position: relative;
@@ -212,7 +219,9 @@
     .dot.best { background: #5de5a8; }
 
     .controls { margin-top: 10px; display: grid; gap: 8px; }
-    #resetBtn {
+    .panel .controls { margin-top: 0; margin-bottom: 10px; }
+    #resetBtn,
+    #modeApplyBtn {
       appearance: none;
       border: none;
       background: linear-gradient(180deg, var(--accent), var(--accent-strong));
@@ -225,9 +234,12 @@
       box-shadow: 0 8px 18px rgba(33, 107, 67, 0.3);
       transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
     }
-    #resetBtn:hover { filter: brightness(1.04); box-shadow: 0 10px 20px rgba(33, 107, 67, 0.34); }
-    #resetBtn:active { transform: translateY(1px); box-shadow: 0 5px 10px rgba(33, 107, 67, 0.3); }
-    #resetBtn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+    #resetBtn:hover,
+    #modeApplyBtn:hover { filter: brightness(1.04); box-shadow: 0 10px 20px rgba(33, 107, 67, 0.34); }
+    #resetBtn:active,
+    #modeApplyBtn:active { transform: translateY(1px); box-shadow: 0 5px 10px rgba(33, 107, 67, 0.3); }
+    #resetBtn:focus-visible,
+    #modeApplyBtn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
     .toggle {
       display: inline-flex;
@@ -266,6 +278,96 @@
     }
     .toggle input[type="checkbox"]:checked::before { transform: translateX(18px); }
     .toggle input[type="checkbox"]:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+    .mode-text {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 28, 19, 0.48);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 50;
+    }
+    .modal {
+      width: min(460px, 100%);
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #d7e4db;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+      padding: 16px;
+    }
+    .modal h3 { margin: 0 0 8px; }
+    .modal p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+    .mode-options { display: grid; gap: 8px; margin-bottom: 14px; }
+    .mode-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #d7e4db;
+      border-radius: 10px;
+      background: #f7fbf8;
+      padding: 10px;
+      font-size: 14px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-ghost {
+      border: 1px solid #c9d9cf;
+      border-radius: 10px;
+      background: #fff;
+      color: #3a5a47;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .modal-ad-wrap {
+      margin-top: 10px;
+      margin-bottom: 8px;
+      border: 1px solid #dce9e0;
+      border-radius: 8px;
+      background: #f7fbf8;
+      padding: 6px;
+    }
+    .ad-label {
+      font-size: 11px;
+      color: #738879;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    .footer-ad {
+      margin: 22px auto 0;
+      max-width: 980px;
+      background: #fff;
+      border: 1px solid #d7e4db;
+      border-radius: 12px;
+      padding: 8px 10px;
+      box-shadow: 0 10px 24px rgba(19, 46, 30, 0.06);
+    }
+    .site-footer {
+      max-width: 980px;
+      margin: 12px auto 0;
+      padding: 0 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: #5f7264;
+    }
+    .site-footer a {
+      color: #2d8b57;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .site-footer a:hover { text-decoration: underline; }
 
     @media (max-width: 720px) {
       h2 { font-size: 30px; }
@@ -279,21 +381,21 @@
   <div class="wrap">
     <div class="board-pane">
       <div id="board" aria-label="reversi board"></div>
-      <div class="controls">
-        <button id="resetBtn">リセット</button>
-        <label class="toggle"><input id="modeToggle" type="checkbox" checked /><span>忖度モード</span></label>
-      </div>
-    </div>
-
-    <div class="panel">
       <div class="row"><b>手番:</b> <span id="turnLabel"></span></div>
       <div class="row"><b>黒(あなた):</b> <span id="blackCount"></span>　
         <b>白(CPU):</b> <span id="whiteCount"></span></div>
+    </div>
+
+    <div class="panel" id="infoPanel">
+      <div class="controls">
+        <button id="resetBtn">リセット</button>
+        <div class="mode-text" id="modeText"></div>
+      </div>
 
       <div class="row" id="concessionRow" style="display:none;">
         <b>CPU譲歩スコア(累計):</b> <span id="concessionTotal" class="mono"></span>
       </div>
-      <div class="row ranking-title">週間ランキング（忖度モード）</div>
+      <div class="row ranking-title">週間ランキング</div>
       <div class="row ranking-period" id="rankingPeriod"></div>
       <div class="row ranking-status" id="rankingStatus"></div>
       <ol class="ranking-list" id="rankingList"></ol>
@@ -309,6 +411,43 @@
 
     </div>
   </div>
+  <div class="modal-overlay" id="modeDialog" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modeDialogTitle">
+      <h3 id="modeDialogTitle">モードを選択</h3>
+      <div class="mode-options">
+        <label class="mode-option"><input type="radio" name="modeSelect" id="modeSontaku" value="sontaku" checked /> 忖度モード（あなたの手に応じてCPUが強さを調整）</label>
+        <label class="mode-option"><input type="radio" name="modeSelect" id="modeNormal" value="normal" /> 通常モード（手加減なしのCPUと対局）</label>
+      </div>
+      <div class="modal-ad-wrap" id="resetAdWrap" style="display:none;">
+        <div class="ad-label">スポンサーリンク</div>
+        <ins class="adsbygoogle"
+          id="resetAdUnit"
+          style="display:block"
+          data-ad-client="ca-pub-8846921424800179"
+          data-ad-slot="9481246375"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" type="button" id="modeCancelBtn">キャンセル</button>
+        <button id="modeApplyBtn" type="button">開始</button>
+      </div>
+    </div>
+  </div>
+  <footer class="footer-ad">
+    <div class="ad-label">スポンサーリンク</div>
+    <ins class="adsbygoogle"
+      id="footerAdUnit"
+      style="display:block"
+      data-ad-client="ca-pub-8846921424800179"
+      data-ad-slot="7605057920"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
+  </footer>
+  <footer class="site-footer">
+    <div>© 2026, Shiromofu Factory</div>
+    <a href="/privacy.html">プライバシーポリシー</a>
+  </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -396,7 +535,7 @@ function currentWeekInfo() {
 }
 
 function rankingComparator(a, b) {
-  if (b.score !== a.score) return b.score - a.score;
+  if (a.score !== b.score) return a.score - b.score;
   return a.ts - b.ts;
 }
 
@@ -800,7 +939,7 @@ function chooseSontakuMove(P, O, concessionState) {
  * ===================== */
 const boardEl = document.getElementById('board');
 const resetBtn = document.getElementById('resetBtn');
-const modeToggle = document.getElementById('modeToggle');
+const modeText = document.getElementById('modeText');
 const turnLabel = document.getElementById('turnLabel');
 const blackCount = document.getElementById('blackCount');
 const whiteCount = document.getElementById('whiteCount');
@@ -812,6 +951,17 @@ const rankingListEl = document.getElementById('rankingList');
 const coachRow = document.getElementById('coachRow');
 const coachSummaryEl = document.getElementById('coachSummary');
 const coachBoardEl = document.getElementById('coachBoard');
+const infoPanel = document.getElementById('infoPanel');
+const modeDialog = document.getElementById('modeDialog');
+const modeDialogTitle = document.getElementById('modeDialogTitle');
+const modeDialogMessage = document.getElementById('modeDialogMessage');
+const modeSontaku = document.getElementById('modeSontaku');
+const modeNormal = document.getElementById('modeNormal');
+const modeCancelBtn = document.getElementById('modeCancelBtn');
+const modeApplyBtn = document.getElementById('modeApplyBtn');
+const resetAdWrap = document.getElementById('resetAdWrap');
+const footerAdUnit = document.getElementById('footerAdUnit');
+const resetAdUnit = document.getElementById('resetAdUnit');
 
 const concessionState = { total: 0, turns: 0 };
 
@@ -821,9 +971,12 @@ let turn = 'BLACK'; // BLACK then WHITE
 let gameOver = false;
 let lastAnim = null; // { flipped: BigInt, placed: BigInt, to: 'BLACK'|'WHITE' }
 let sontakuMode = true;
+let gameStarted = false;
 let weekTopEntries = [];
 let rankingWeekKey = "";
-let worstPlayerMistake = null; // { loss, bestMove, actualMove, boardP, boardO, bestEval, actualEval }
+let worstPlayerMistake = null; // { loss, weightedLoss, bestMove, actualMove, boardP, boardO, bestEval, actualEval, emptyBefore }
+const COACH_EXCLUDE_EMPTY = 10;
+const adState = { footerLoaded: false, resetLoaded: false };
 
 function bitAt(x, y) {
   const idx = BigInt(x + y * 8);
@@ -855,7 +1008,18 @@ function scorePlayerMove(P, O, mv) {
   return minimax(cpuP, playerO, 3, true, searchTT);
 }
 
+function coachingPhaseWeight(emptyBefore) {
+  // Midgame mistakes are emphasized; late game is down-weighted.
+  if (emptyBefore <= COACH_EXCLUDE_EMPTY) return 0;
+  if (emptyBefore >= 24) return 1;
+  const t = (emptyBefore - COACH_EXCLUDE_EMPTY) / (24 - COACH_EXCLUDE_EMPTY);
+  return 0.35 + 0.65 * t; // 0.35..1.0
+}
+
 function maybeTrackPlayerMistake(Pcpu, Oplayer, chosenMv, legalMovesBB) {
+  const emptyBefore = 64 - popcount64(Pcpu | Oplayer);
+  if (emptyBefore <= COACH_EXCLUDE_EMPTY) return; // exclude last N moves from coaching
+
   const moves = bitsToArray(legalMovesBB);
   if (moves.length <= 1) return;
 
@@ -875,16 +1039,20 @@ function maybeTrackPlayerMistake(Pcpu, Oplayer, chosenMv, legalMovesBB) {
 
   const loss = actualEval - bestEval;
   if (loss <= 0) return;
+  const weightedLoss = loss * coachingPhaseWeight(emptyBefore);
+  if (weightedLoss <= 0) return;
 
-  if (!worstPlayerMistake || loss > worstPlayerMistake.loss) {
+  if (!worstPlayerMistake || weightedLoss > worstPlayerMistake.weightedLoss) {
     worstPlayerMistake = {
       loss,
+      weightedLoss,
       bestMove,
       actualMove: chosenMv,
       boardP: Pcpu,
       boardO: Oplayer,
       bestEval,
       actualEval,
+      emptyBefore,
     };
   }
 }
@@ -937,8 +1105,82 @@ function showCoachingIfNeeded(playerWon, playerLost) {
 
   const m = worstPlayerMistake;
   coachSummaryEl.textContent =
-    `この局面では ${bitToCoord(m.actualMove)} より ${bitToCoord(m.bestMove)} が有力でした（評価差 ${m.loss.toFixed(1)}）。`;
+    `この局面では下図の手が有力でした（評価差 ${m.loss.toFixed(1)}）。`;
   renderCoachBoard(m);
+}
+
+function scrollToInfoPanelIfMobile() {
+  if (!infoPanel) return;
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    infoPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function syncModeLabel() {
+  modeText.textContent = `モード: ${sontakuMode ? "忖度モード" : "通常モード"}`;
+}
+
+function setModeSelection(mode) {
+  modeSontaku.checked = mode === "sontaku";
+  modeNormal.checked = mode === "normal";
+}
+
+function selectedModeValue() {
+  return modeSontaku.checked ? "sontaku" : "normal";
+}
+
+function openModeDialog(initial) {
+  modeDialog.dataset.initial = initial ? "1" : "0";
+  if (initial) {
+    modeDialogTitle.textContent = "モードを選んで開始";
+    modeApplyBtn.textContent = "開始";
+    modeCancelBtn.style.display = "none";
+    resetAdWrap.style.display = "none";
+    setModeSelection("sontaku");
+  } else {
+    modeDialogTitle.textContent = "対局をリセット";
+    modeApplyBtn.textContent = "リセット";
+    modeCancelBtn.style.display = "";
+    resetAdWrap.style.display = "";
+    setModeSelection(sontakuMode ? "sontaku" : "normal");
+    ensureResetAdLoaded();
+  }
+  modeDialog.style.display = "flex";
+  modeDialog.setAttribute("aria-hidden", "false");
+}
+
+function closeModeDialog() {
+  modeDialog.style.display = "none";
+  modeDialog.setAttribute("aria-hidden", "true");
+}
+
+function applyModeAndStart() {
+  const mode = selectedModeValue();
+  sontakuMode = mode === "sontaku";
+  syncModeLabel();
+  closeModeDialog();
+  resetGame();
+}
+
+function tryLoadAd(loadedFlagKey) {
+  if (adState[loadedFlagKey]) return;
+  if (!window.adsbygoogle) return;
+  try {
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    adState[loadedFlagKey] = true;
+  } catch (e) {
+    console.warn("Ad load skipped:", e);
+  }
+}
+
+function ensureFooterAdLoaded() {
+  if (!footerAdUnit) return;
+  tryLoadAd("footerLoaded");
+}
+
+function ensureResetAdLoaded() {
+  if (!resetAdUnit) return;
+  tryLoadAd("resetLoaded");
 }
 
 function setRankingStatus() {
@@ -950,7 +1192,7 @@ function setRankingStatus() {
     rankingStatusEl.textContent = "通常モードはランキング対象外です。";
     return;
   }
-  rankingStatusEl.textContent = "忖度モードで勝利したときのみ記録されます。";
+  rankingStatusEl.textContent = "忖度モードで勝利したときのみ記録されます。低いほど忖度されずに勝ったことを示すので、良スコアです。";
 }
 
 function renderRankingList(entries) {
@@ -983,7 +1225,7 @@ async function fetchWeeklyRanking() {
 
   const snap = await rankingDb.ref(`weeklyRankings/${week.key}`)
     .orderByChild("score")
-    .limitToLast(20)
+    .limitToFirst(20)
     .once("value");
 
   const rows = [];
@@ -1048,6 +1290,7 @@ function resetGame() {
   concessionRow.style.display = 'none';
   coachRow.style.display = 'none';
   worstPlayerMistake = null;
+  gameStarted = true;
   lastAnim = null;
   render();
 }
@@ -1066,12 +1309,15 @@ function render() {
   const white = popcount64(P);
   blackCount.textContent = String(black);
   whiteCount.textContent = String(white);
+  syncModeLabel();
   if (concessionRow.style.display !== 'none') {
     concessionTotalEl.textContent = String(Math.round(concessionState.total));
   }
   setRankingStatus();
 
-  if (gameOver) {
+  if (!gameStarted) {
+    turnLabel.textContent = '開始前';
+  } else if (gameOver) {
     turnLabel.textContent = '終了';
   } else {
     turnLabel.textContent = (turn === 'BLACK') ? '黒（あなた）' : '白（CPU）';
@@ -1164,6 +1410,7 @@ function endIfNoMoves() {
       showCoachingIfNeeded(false, false);
     }
     render();
+    scrollToInfoPanelIfMobile();
     return true;
   }
   return false;
@@ -1191,7 +1438,7 @@ function passIfNeeded() {
 }
 
 function onCellClick(e) {
-  if (gameOver || turn !== 'BLACK') return;
+  if (!gameStarted || gameOver || turn !== 'BLACK') return;
 
   const x = Number(e.currentTarget.dataset.x);
   const y = Number(e.currentTarget.dataset.y);
@@ -1268,13 +1515,13 @@ function cpuMove() {
   passIfNeeded();
 }
 
-resetBtn.addEventListener('click', resetGame);
-modeToggle.addEventListener('change', () => {
-  sontakuMode = modeToggle.checked;
-  render();
-});
+resetBtn.addEventListener('click', () => openModeDialog(false));
+modeApplyBtn.addEventListener('click', applyModeAndStart);
+modeCancelBtn.addEventListener('click', closeModeDialog);
 void fetchWeeklyRanking();
-resetGame();
+render();
+ensureFooterAdLoaded();
+openModeDialog(true);
 </script>
 </body>
 </html>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="cellA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2b9450" />
+      <stop offset="100%" stop-color="#1b6d3c" />
+    </linearGradient>
+    <linearGradient id="cellB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#258447" />
+      <stop offset="100%" stop-color="#176136" />
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="#134f2f" />
+  <rect x="6" y="6" width="25" height="25" rx="3" fill="url(#cellA)" />
+  <rect x="33" y="6" width="25" height="25" rx="3" fill="url(#cellB)" />
+  <rect x="6" y="33" width="25" height="25" rx="3" fill="url(#cellB)" />
+  <rect x="33" y="33" width="25" height="25" rx="3" fill="url(#cellA)" />
+
+  <circle cx="18.5" cy="18.5" r="8.5" fill="#f5f5f5" stroke="#bdbdbd" stroke-width="1.5" />
+  <circle cx="45.5" cy="18.5" r="8.5" fill="#171717" stroke="#363636" stroke-width="1.5" />
+  <circle cx="18.5" cy="45.5" r="8.5" fill="#171717" stroke="#363636" stroke-width="1.5" />
+  <circle cx="45.5" cy="45.5" r="8.5" fill="#f5f5f5" stroke="#bdbdbd" stroke-width="1.5" />
+</svg>
