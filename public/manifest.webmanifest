@@ -1,0 +1,24 @@
+{
+  "name": "忖度リバーシ",
+  "short_name": "忖度リバーシ",
+  "description": "ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef5f0",
+  "theme_color": "#1e7345",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/ogp.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

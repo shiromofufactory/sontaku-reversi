@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#1e7345" />
+  <link rel="apple-touch-icon" href="/ogp.png" />
   <title>忖度リバーシ</title>
   <meta name="description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
   <meta property="og:type" content="website" />
@@ -221,7 +224,8 @@
     .controls { margin-top: 10px; display: grid; gap: 8px; }
     .panel .controls { margin-top: 0; margin-bottom: 10px; }
     #resetBtn,
-    #modeApplyBtn {
+    #modeApplyBtn,
+    #rankingSubmitBtn {
       appearance: none;
       border: none;
       background: linear-gradient(180deg, var(--accent), var(--accent-strong));
@@ -235,11 +239,14 @@
       transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
     }
     #resetBtn:hover,
-    #modeApplyBtn:hover { filter: brightness(1.04); box-shadow: 0 10px 20px rgba(33, 107, 67, 0.34); }
+    #modeApplyBtn:hover,
+    #rankingSubmitBtn:hover { filter: brightness(1.04); box-shadow: 0 10px 20px rgba(33, 107, 67, 0.34); }
     #resetBtn:active,
-    #modeApplyBtn:active { transform: translateY(1px); box-shadow: 0 5px 10px rgba(33, 107, 67, 0.3); }
+    #modeApplyBtn:active,
+    #rankingSubmitBtn:active { transform: translateY(1px); box-shadow: 0 5px 10px rgba(33, 107, 67, 0.3); }
     #resetBtn:focus-visible,
-    #modeApplyBtn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+    #modeApplyBtn:focus-visible,
+    #rankingSubmitBtn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
     .toggle {
       display: inline-flex;
@@ -368,6 +375,39 @@
       font-weight: 700;
     }
     .site-footer a:hover { text-decoration: underline; }
+    .ranking-result {
+      background: #f4faf6;
+      border: 1px solid #d9e9de;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #32513f;
+      line-height: 1.6;
+    }
+    .ranking-note {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .ranking-input {
+      width: 100%;
+      border: 1px solid #c9d9cf;
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px 12px;
+      font-size: 16px;
+    }
+    .ranking-input:focus-visible {
+      outline: 3px solid var(--ring);
+      outline-offset: 1px;
+    }
+    .input-error {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #b42424;
+      min-height: 1.2em;
+    }
 
     @media (max-width: 720px) {
       h2 { font-size: 30px; }
@@ -431,6 +471,22 @@
       <div class="modal-actions">
         <button class="btn-ghost" type="button" id="modeCancelBtn">キャンセル</button>
         <button id="modeApplyBtn" type="button">開始</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="rankingDialog" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rankingDialogTitle">
+      <h3 id="rankingDialogTitle">ランキング登録</h3>
+      <div class="ranking-result">
+        <div id="rankingResultLine"></div>
+        <div id="rankingScoreLine"></div>
+      </div>
+      <p class="ranking-note">週間ランキング5位以内です。名前を入力してください。</p>
+      <input class="ranking-input" id="rankingNameInput" type="text" value="ゲスト" maxlength="40" />
+      <div class="input-error" id="rankingNameError"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" type="button" id="rankingGuestBtn">ゲストで登録</button>
+        <button id="rankingSubmitBtn" type="button">登録</button>
       </div>
     </div>
   </div>
@@ -550,18 +606,7 @@ function isValidName(name) {
   return Array.from(n).length <= 20;
 }
 
-function askRankingName() {
-  while (true) {
-    const input = window.prompt("週間ランキング5位以内です。名前を入力してください（20文字以内）", "ゲスト");
-    if (input === null) return "ゲスト";
-    const name = normalizeName(input);
-    if (!isValidName(name)) {
-      alert("名前は20文字以内で入力してください。");
-      continue;
-    }
-    return name;
-  }
-}
+let rankingDialogResolve = null;
 
 function popcount64(bb) {
   let c = 0;
@@ -962,6 +1007,13 @@ const modeApplyBtn = document.getElementById('modeApplyBtn');
 const resetAdWrap = document.getElementById('resetAdWrap');
 const footerAdUnit = document.getElementById('footerAdUnit');
 const resetAdUnit = document.getElementById('resetAdUnit');
+const rankingDialog = document.getElementById('rankingDialog');
+const rankingResultLine = document.getElementById('rankingResultLine');
+const rankingScoreLine = document.getElementById('rankingScoreLine');
+const rankingNameInput = document.getElementById('rankingNameInput');
+const rankingNameError = document.getElementById('rankingNameError');
+const rankingGuestBtn = document.getElementById('rankingGuestBtn');
+const rankingSubmitBtn = document.getElementById('rankingSubmitBtn');
 
 const concessionState = { total: 0, turns: 0 };
 
@@ -1162,6 +1214,45 @@ function applyModeAndStart() {
   resetGame();
 }
 
+function closeRankingDialog() {
+  rankingDialog.style.display = "none";
+  rankingDialog.setAttribute("aria-hidden", "true");
+}
+
+function resolveRankingDialog(name) {
+  if (!rankingDialogResolve) return;
+  const fn = rankingDialogResolve;
+  rankingDialogResolve = null;
+  closeRankingDialog();
+  fn(name);
+}
+
+function validateRankingNameInput() {
+  const raw = rankingNameInput.value ?? "";
+  const normalized = normalizeName(raw);
+  if (!isValidName(normalized)) {
+    rankingNameError.textContent = "名前は20文字以内で入力してください。";
+    return false;
+  }
+  rankingNameError.textContent = "";
+  return true;
+}
+
+function openRankingDialog({ black, white, score }) {
+  rankingResultLine.textContent = `対戦成績: 黒(あなた) ${black} - 白(CPU) ${white}`;
+  rankingScoreLine.textContent = `スコア: ${score}`;
+  rankingNameInput.value = "ゲスト";
+  rankingNameError.textContent = "";
+  rankingDialog.style.display = "flex";
+  rankingDialog.setAttribute("aria-hidden", "false");
+  rankingNameInput.focus();
+  rankingNameInput.select();
+
+  return new Promise((resolve) => {
+    rankingDialogResolve = resolve;
+  });
+}
+
 function tryLoadAd(loadedFlagKey) {
   if (adState[loadedFlagKey]) return;
   if (!window.adsbygoogle) return;
@@ -1255,14 +1346,14 @@ function wouldRankTop5(score, nowTs, entries) {
   return top.some((e) => e.name === "TMP" && e.score === score && e.ts === nowTs);
 }
 
-async function trySubmitWeeklyRanking(score) {
+async function trySubmitWeeklyRanking(score, black, white) {
   if (!rankingDb || !sontakuMode) return;
 
   const nowTs = Date.now();
   const top = await fetchWeeklyRanking();
   if (!wouldRankTop5(score, nowTs, top)) return;
 
-  const name = askRankingName();
+  const name = await openRankingDialog({ black, white, score });
   const safeName = normalizeName(name);
   if (!isValidName(safeName)) return;
 
@@ -1395,7 +1486,7 @@ function endIfNoMoves() {
       log(`試合終了: 黒(あなた) ${black} - 白(CPU) ${white} で勝ち！`);
       log(`あなたのスコア（CPU譲歩度）: ${Math.round(concessionState.total)}`);
       if (sontakuMode) {
-        void trySubmitWeeklyRanking(Math.round(concessionState.total));
+        void trySubmitWeeklyRanking(Math.round(concessionState.total), black, white);
       }
       showCoachingIfNeeded(true, false);
     } else if (black < white) {
@@ -1518,6 +1609,26 @@ function cpuMove() {
 resetBtn.addEventListener('click', () => openModeDialog(false));
 modeApplyBtn.addEventListener('click', applyModeAndStart);
 modeCancelBtn.addEventListener('click', closeModeDialog);
+rankingGuestBtn.addEventListener('click', () => resolveRankingDialog("ゲスト"));
+rankingSubmitBtn.addEventListener('click', () => {
+  if (!validateRankingNameInput()) return;
+  resolveRankingDialog(rankingNameInput.value);
+});
+rankingNameInput.addEventListener('input', validateRankingNameInput);
+rankingNameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!validateRankingNameInput()) return;
+    resolveRankingDialog(rankingNameInput.value);
+  }
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((e) => {
+      console.warn('Service Worker registration failed:', e);
+    });
+  });
+}
 void fetchWeeklyRanking();
 render();
 ensureFooterAdLoaded();
