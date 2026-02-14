@@ -50,6 +50,8 @@
       padding: 14px;
       border: 1px solid #d7e4db;
       box-shadow: 0 12px 30px rgba(19, 46, 30, 0.08);
+      flex: 0 0 auto;
+      width: clamp(340px, 38vw, 470px);
     }
     #board {
       display: grid;
@@ -57,7 +59,7 @@
       grid-template-rows: repeat(8, minmax(0, 1fr));
       gap: 2px;
       user-select: none;
-      width: min(100%, 346px);
+      width: min(100%, 430px);
       aspect-ratio: 1 / 1;
       padding: 6px;
       border-radius: 10px;
@@ -116,6 +118,7 @@
     }
     .panel {
       min-width: 280px;
+      flex: 1 1 360px;
       background: var(--panel);
       border-radius: 16px;
       border: 1px solid #d7e4db;
@@ -202,6 +205,10 @@
       border-color: #ffb15a;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 0 8px rgba(255,177,90,0.55);
     }
+    .coach-mark.good {
+      border-color: #6ec8ff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 0 8px rgba(110,200,255,0.55);
+    }
     .coach-legend {
       display: flex;
       gap: 12px;
@@ -220,8 +227,14 @@
     }
     .dot.actual { background: #ffb15a; }
     .dot.best { background: #5de5a8; }
+    .dot.good { background: #6ec8ff; }
 
     .controls { margin-top: 10px; display: grid; gap: 8px; }
+    .board-controls {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
     .panel .controls { margin-top: 0; margin-bottom: 10px; }
     #resetBtn,
     #modeApplyBtn,
@@ -237,6 +250,11 @@
       cursor: pointer;
       box-shadow: 0 8px 18px rgba(33, 107, 67, 0.3);
       transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+    }
+    #resetBtn {
+      padding: 8px 16px;
+      min-width: 112px;
+      font-size: 14px;
     }
     #resetBtn:hover,
     #modeApplyBtn:hover,
@@ -286,8 +304,6 @@
     .toggle input[type="checkbox"]:checked::before { transform: translateX(18px); }
     .toggle input[type="checkbox"]:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
     .mode-text {
-      font-size: 13px;
-      color: var(--muted);
       font-weight: 700;
     }
     .modal-overlay {
@@ -334,14 +350,6 @@
       padding: 9px 12px;
       cursor: pointer;
       font-weight: 700;
-    }
-    .modal-ad-wrap {
-      margin-top: 10px;
-      margin-bottom: 8px;
-      border: 1px solid #dce9e0;
-      border-radius: 8px;
-      background: #f7fbf8;
-      padding: 6px;
     }
     .ad-label {
       font-size: 11px;
@@ -390,6 +398,26 @@
       color: var(--muted);
       font-size: 14px;
     }
+    .guide-link {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: #2d8b57;
+      font-size: 13px;
+      padding: 0;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .guide-link.inline { font-size: 12px; }
+    .guide-body {
+      font-size: 14px;
+      color: #2d3c34;
+      line-height: 1.7;
+    }
+    .guide-body p { margin: 0 0 10px; }
     .ranking-input {
       width: 100%;
       border: 1px solid #c9d9cf;
@@ -421,56 +449,73 @@
   <div class="wrap">
     <div class="board-pane">
       <div id="board" aria-label="reversi board"></div>
-      <div class="row"><b>手番:</b> <span id="turnLabel"></span></div>
+      <div class="row" id="turnRow"><b>手番:</b> <span id="turnLabel"></span></div>
       <div class="row"><b>黒(あなた):</b> <span id="blackCount"></span>　
         <b>白(CPU):</b> <span id="whiteCount"></span></div>
+      <div class="controls">
+        <div class="mode-text" id="modeText"></div>
+        <button class="guide-link" id="cpuGuideLink" type="button">CPUの仕組み（モードの説明）</button>
+      </div>
+      <div class="board-controls">
+        <button id="resetBtn">リセット</button>
+      </div>
     </div>
 
     <div class="panel" id="infoPanel">
-      <div class="controls">
-        <button id="resetBtn">リセット</button>
-        <div class="mode-text" id="modeText"></div>
-      </div>
-
       <div class="row" id="concessionRow" style="display:none;">
-        <b>CPU譲歩スコア(累計):</b> <span id="concessionTotal" class="mono"></span>
+        <b>プレイヤースコア:</b> <span id="concessionTotal" class="mono"></span>
       </div>
-      <div class="row ranking-title">週間ランキング</div>
-      <div class="row ranking-period" id="rankingPeriod"></div>
-      <div class="row ranking-status" id="rankingStatus"></div>
-      <ol class="ranking-list" id="rankingList"></ol>
       <div class="coach-wrap" id="coachRow" style="display:none;">
         <div class="coach-title">ワンポイント指導</div>
+        <button class="guide-link inline" id="coachGuideLink" type="button">詳しい説明</button>
         <div class="coach-summary" id="coachSummary"></div>
         <div class="coach-board" id="coachBoard"></div>
         <div class="coach-legend">
           <span><span class="dot actual"></span>実際に打った手</span>
           <span><span class="dot best"></span>おすすめの手</span>
         </div>
+        <div class="coach-wrap" id="coachGoodWrap" style="display:none;">
+          <div class="coach-summary" id="coachGoodSummary"></div>
+          <div class="coach-board" id="coachGoodBoard"></div>
+          <div class="coach-legend">
+            <span><span class="dot good"></span>良かった手</span>
+          </div>
+        </div>
       </div>
+      <div class="row ranking-title">週間ランキング</div>
+      <div class="row ranking-period" id="rankingPeriod"></div>
+      <div class="row ranking-status" id="rankingStatus"></div>
+      <ol class="ranking-list" id="rankingList"></ol>
 
     </div>
   </div>
   <div class="modal-overlay" id="modeDialog" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modeDialogTitle">
-      <h3 id="modeDialogTitle">モードを選択</h3>
+      <h3 id="modeDialogTitle">忖度リバーシへようこそ！</h3>
+      <p class="ranking-note" id="modeIntroText">忖度リバーシは、あなたの強さに応じてCPUが忖度しながら対局してくれるCPU対戦型リバーシです。対局後にはワンポイント指導も表示します。</p>
       <div class="mode-options">
-        <label class="mode-option"><input type="radio" name="modeSelect" id="modeSontaku" value="sontaku" checked /> 忖度モード（あなたの手に応じてCPUが強さを調整）</label>
-        <label class="mode-option"><input type="radio" name="modeSelect" id="modeNormal" value="normal" /> 通常モード（手加減なしのCPUと対局）</label>
+        <label class="mode-option"><input type="radio" name="modeSelect" id="modeSontakuA" value="sontakuA" checked /> 忖度モードA（あなたを勝たせる）</label>
+        <label class="mode-option"><input type="radio" name="modeSelect" id="modeSontakuB" value="sontakuB" /> 忖度モードB（あなたより少し強い）</label>
+        <label class="mode-option"><input type="radio" name="modeSelect" id="modeHonki" value="honki" /> 本気モード（手加減なし）</label>
       </div>
-      <div class="modal-ad-wrap" id="resetAdWrap" style="display:none;">
-        <div class="ad-label">スポンサーリンク</div>
-        <ins class="adsbygoogle"
-          id="resetAdUnit"
-          style="display:block"
-          data-ad-client="ca-pub-8846921424800179"
-          data-ad-slot="9481246375"
-          data-ad-format="auto"
-          data-full-width-responsive="true"></ins>
-      </div>
+      <button class="guide-link inline" id="modeGuideLink" type="button">詳しい説明</button>
       <div class="modal-actions">
         <button class="btn-ghost" type="button" id="modeCancelBtn">キャンセル</button>
         <button id="modeApplyBtn" type="button">開始</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="cpuGuideDialog" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cpuGuideTitle">
+      <h3 id="cpuGuideTitle">CPUの仕組み（モードの説明）</h3>
+      <div class="guide-body">
+        <p><b>忖度モードA:</b> CPUは候補手を評価し、CPU有利にならない手を優先して選びます。つまり、あなたが弱くてもギリギリ勝てるように振る舞います。</p>
+        <p><b>忖度モードB:</b> 忖度モードAと違って、CPUがわずかに有利になる手を選びます。つまり、あなたがギリギリ負けるように振る舞います。</p>
+        <p><b>本気モード:</b> CPUは評価値が最も高い手を選びます。手加減なしで対局します。</p>
+        <p>評価値は、角・安定石・モビリティ（次に打てる手の多さ）などを加味して判定しています。</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" type="button" id="cpuGuideCloseBtn">閉じる</button>
       </div>
     </div>
   </div>
@@ -487,6 +532,20 @@
       <div class="modal-actions">
         <button class="btn-ghost" type="button" id="rankingGuestBtn">ゲストで登録</button>
         <button id="rankingSubmitBtn" type="button">登録</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="coachGuideDialog" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="coachGuideTitle">
+      <h3 id="coachGuideTitle">ワンポイント指導の見方</h3>
+      <div class="guide-body">
+        <p>対局中のあなたの手を評価し、「もっと良い手との差」が最も大きかった局面を1つ表示します。</p>
+        <p>表示される評価差は、CPU評価に基づく差分です。値が大きいほど改善余地が大きかったことを示します。</p>
+        <p>加えて、「合法手の平均より良かった手」も1つ表示します。</p>
+        <p>表示される平均差は、あなたが打った手の評価値とその局面で打てる手の評価平均値との差で、値が大きいほどその局面で良い判断をしたことを示します。</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" type="button" id="coachGuideCloseBtn">閉じる</button>
       </div>
     </div>
   </div>
@@ -592,7 +651,7 @@ function currentWeekInfo() {
 }
 
 function rankingComparator(a, b) {
-  if (a.score !== b.score) return a.score - b.score;
+  if (a.score !== b.score) return b.score - a.score;
   return a.ts - b.ts;
 }
 
@@ -925,57 +984,127 @@ function moveCornerRiskPenalty(P, O, mv) {
   return penalty * antiEnd;
 }
 
+function opponentCornerChancePenalty(P, O, mv, mode) {
+  if (mode !== "sontakuB") return 0;
+  // Penalize moves that immediately allow the opponent to play a corner.
+  const next = applyMove(P, O, mv);
+  const oppMoves = legalMoves(next.O, next.P);
+  if (oppMoves === 0n) return 0;
+
+  const cornerMask = (1n << corners[0]) | (1n << corners[1]) | (1n << corners[2]) | (1n << corners[3]);
+  const cornerMoves = popcount64(oppMoves & cornerMask);
+  if (cornerMoves === 0) return 0;
+
+  const occupied = popcount64(P | O);
+  let antiEnd = (56 - occupied) / 20;
+  if (antiEnd < 0) antiEnd = 0;
+  if (antiEnd > 1) antiEnd = 1;
+  return cornerMoves * 180 * antiEnd;
+}
+
+function openingRandomnessProfile(occupied) {
+  // Stronger in opening, weak in midgame, almost none in endgame.
+  let early = (44 - occupied) / 28;
+  if (early < 0) early = 0;
+  if (early > 1) early = 1;
+  return {
+    chance: 0.42 * early,
+    tolerance: 6 + 22 * early,
+  };
+}
+
+function maybePickSecondCandidate(candidates, occupied, maximize) {
+  if (!candidates.length) return null;
+  if (candidates.length < 2) return candidates[0];
+
+  const top = candidates[0];
+  const second = candidates[1];
+  const diff = maximize
+    ? (top.primary - second.primary)
+    : (second.primary - top.primary);
+
+  const { chance, tolerance } = openingRandomnessProfile(occupied);
+  if (chance > 0 && diff <= tolerance && Math.random() < chance) {
+    return second;
+  }
+  return top;
+}
+
+function modeLabel(mode) {
+  if (mode === "sontakuA") return "忖度モードA";
+  if (mode === "sontakuB") return "忖度モードB";
+  return "本気モード";
+}
+
+function isSontakuMode(mode) {
+  return mode === "sontakuA" || mode === "sontakuB";
+}
+
 /** =====================
  * Sontaku selection + concession score
  * - prefer best move under eval_after <= 0
  * - if none, choose minimum eval_after
  * - concession += max(0, best_eval - chosen_eval)
  * ===================== */
-function chooseSontakuMove(P, O, concessionState) {
+function chooseSontakuMove(P, O, mode) {
   const movesBB = legalMoves(P, O);
   if (!movesBB) return { move: 0n, bestEval: null, chosenEval: null, concession: 0 };
 
   const moves = bitsToArray(movesBB);
+  const occupied = popcount64(P | O);
 
   let bestEval = -Infinity;
 
-  let hasNonPos = false;
-  let bestNonPosEval = -Infinity;
-  let bestNonPosAdjusted = -Infinity;
-  let bestNonPosMove = 0n;
-
-  let minEval = Infinity;
-  let minAdjustedEval = Infinity;
-  let minEvalMove = moves[0];
+  const underOrZeroCandidates = [];
+  const positiveCandidates = [];
+  const allCandidates = [];
 
   for (const mv of moves) {
     const e = scoreMove(P, O, mv);
-    const adjusted = e - moveCornerRiskPenalty(P, O, mv);
+    const riskPenalty =
+      moveCornerRiskPenalty(P, O, mv) +
+      opponentCornerChancePenalty(P, O, mv, mode);
+    const adjusted = e - riskPenalty;
+    allCandidates.push({ mv, primary: adjusted, eval: e });
 
     if (e > bestEval) bestEval = e;
 
     if (e <= 0) {
-      if (!hasNonPos || adjusted > bestNonPosAdjusted || (adjusted === bestNonPosAdjusted && e > bestNonPosEval)) {
-        hasNonPos = true;
-        bestNonPosEval = e;
-        bestNonPosAdjusted = adjusted;
-        bestNonPosMove = mv;
-      }
-    }
-    if (adjusted < minAdjustedEval || (adjusted === minAdjustedEval && e < minEval)) {
-      minEval = e;
-      minAdjustedEval = adjusted;
-      minEvalMove = mv;
+      underOrZeroCandidates.push({ mv, primary: adjusted, eval: e });
+    } else {
+      // In sontakuB, choose the smallest positive eval (closest to 0+).
+      positiveCandidates.push({ mv, primary: adjusted, eval: e });
     }
   }
 
   let chosenMove, chosenEval;
-  if (hasNonPos) { chosenMove = bestNonPosMove; chosenEval = bestNonPosEval; }
-  else { chosenMove = minEvalMove; chosenEval = minEval; }
+  if (mode === "sontakuB" && positiveCandidates.length) {
+    positiveCandidates.sort((a, b) => {
+      if (a.eval !== b.eval) return a.eval - b.eval;
+      return b.primary - a.primary;
+    });
+    const picked = maybePickSecondCandidate(positiveCandidates, occupied, false);
+    chosenMove = picked.mv;
+    chosenEval = picked.eval;
+  } else if (underOrZeroCandidates.length) {
+    underOrZeroCandidates.sort((a, b) => {
+      if (b.primary !== a.primary) return b.primary - a.primary;
+      return b.eval - a.eval;
+    });
+    const picked = maybePickSecondCandidate(underOrZeroCandidates, occupied, true);
+    chosenMove = picked.mv;
+    chosenEval = picked.eval;
+  } else {
+    allCandidates.sort((a, b) => {
+      if (a.primary !== b.primary) return a.primary - b.primary;
+      return a.eval - b.eval;
+    });
+    const picked = maybePickSecondCandidate(allCandidates, occupied, false);
+    chosenMove = picked.mv;
+    chosenEval = picked.eval;
+  }
 
   const concession = Math.max(0, bestEval - chosenEval);
-  concessionState.total += concession;
-  concessionState.turns += 1;
 
   return { move: chosenMove, bestEval, chosenEval, concession };
 }
@@ -986,6 +1115,7 @@ function chooseSontakuMove(P, O, concessionState) {
 const boardEl = document.getElementById('board');
 const resetBtn = document.getElementById('resetBtn');
 const modeText = document.getElementById('modeText');
+const turnRow = document.getElementById('turnRow');
 const turnLabel = document.getElementById('turnLabel');
 const blackCount = document.getElementById('blackCount');
 const whiteCount = document.getElementById('whiteCount');
@@ -997,17 +1127,26 @@ const rankingListEl = document.getElementById('rankingList');
 const coachRow = document.getElementById('coachRow');
 const coachSummaryEl = document.getElementById('coachSummary');
 const coachBoardEl = document.getElementById('coachBoard');
+const coachGoodWrap = document.getElementById('coachGoodWrap');
+const coachGoodSummaryEl = document.getElementById('coachGoodSummary');
+const coachGoodBoardEl = document.getElementById('coachGoodBoard');
 const infoPanel = document.getElementById('infoPanel');
 const modeDialog = document.getElementById('modeDialog');
 const modeDialogTitle = document.getElementById('modeDialogTitle');
-const modeDialogMessage = document.getElementById('modeDialogMessage');
-const modeSontaku = document.getElementById('modeSontaku');
-const modeNormal = document.getElementById('modeNormal');
+const modeIntroText = document.getElementById('modeIntroText');
+const modeSontakuA = document.getElementById('modeSontakuA');
+const modeSontakuB = document.getElementById('modeSontakuB');
+const modeHonki = document.getElementById('modeHonki');
 const modeCancelBtn = document.getElementById('modeCancelBtn');
 const modeApplyBtn = document.getElementById('modeApplyBtn');
-const resetAdWrap = document.getElementById('resetAdWrap');
+const modeGuideLink = document.getElementById('modeGuideLink');
+const cpuGuideLink = document.getElementById('cpuGuideLink');
+const cpuGuideDialog = document.getElementById('cpuGuideDialog');
+const cpuGuideCloseBtn = document.getElementById('cpuGuideCloseBtn');
+const coachGuideLink = document.getElementById('coachGuideLink');
+const coachGuideDialog = document.getElementById('coachGuideDialog');
+const coachGuideCloseBtn = document.getElementById('coachGuideCloseBtn');
 const footerAdUnit = document.getElementById('footerAdUnit');
-const resetAdUnit = document.getElementById('resetAdUnit');
 const rankingDialog = document.getElementById('rankingDialog');
 const rankingResultLine = document.getElementById('rankingResultLine');
 const rankingScoreLine = document.getElementById('rankingScoreLine');
@@ -1016,20 +1155,22 @@ const rankingNameError = document.getElementById('rankingNameError');
 const rankingGuestBtn = document.getElementById('rankingGuestBtn');
 const rankingSubmitBtn = document.getElementById('rankingSubmitBtn');
 
-const concessionState = { total: 0, turns: 0 };
+const scoreState = { total: 0, turns: 0 };
 
 let P = 0n; // CPU (white)
 let O = 0n; // Player (black)
 let turn = 'BLACK'; // BLACK then WHITE
 let gameOver = false;
 let lastAnim = null; // { flipped: BigInt, placed: BigInt, to: 'BLACK'|'WHITE' }
-let sontakuMode = true;
+let currentMode = "sontakuA";
 let gameStarted = false;
 let weekTopEntries = [];
 let rankingWeekKey = "";
 let worstPlayerMistake = null; // { loss, weightedLoss, bestMove, actualMove, boardP, boardO, bestEval, actualEval, emptyBefore }
+let bestPlayerGoodMove = null; // { gain, weightedGain, actualMove, boardP, boardO, actualEval, avgEval, emptyBefore }
 const COACH_EXCLUDE_EMPTY = 10;
-const adState = { footerLoaded: false, resetLoaded: false };
+const COACH_GOOD_EXCLUDE_OPENING_MOVES = 8;
+const adState = { footerLoaded: false };
 
 function bitAt(x, y) {
   const idx = BigInt(x + y * 8);
@@ -1069,50 +1210,83 @@ function coachingPhaseWeight(emptyBefore) {
   return 0.35 + 0.65 * t; // 0.35..1.0
 }
 
+function normalizedTurnScore(bestEval, worstEval, actualEval) {
+  if (worstEval <= bestEval) return 1000;
+  const raw = ((worstEval - actualEval) / (worstEval - bestEval)) * 1000;
+  if (raw < 0) return 0;
+  if (raw > 1000) return 1000;
+  return raw;
+}
+
 function maybeTrackPlayerMistake(Pcpu, Oplayer, chosenMv, legalMovesBB) {
   const emptyBefore = 64 - popcount64(Pcpu | Oplayer);
-  if (emptyBefore <= COACH_EXCLUDE_EMPTY) return; // exclude last N moves from coaching
 
   const moves = bitsToArray(legalMovesBB);
-  if (moves.length <= 1) return;
+  if (moves.length <= 1) return { turnScore: 1000 };
 
   let bestEval = Infinity;   // lower CPU eval is better for player
+  let worstEval = -Infinity; // higher CPU eval is worse for player
   let bestMove = moves[0];
   let actualEval = null;
+  let sumEval = 0;
 
   for (const mv of moves) {
     const e = scorePlayerMove(Pcpu, Oplayer, mv);
+    sumEval += e;
     if (e < bestEval) {
       bestEval = e;
       bestMove = mv;
     }
+    if (e > worstEval) worstEval = e;
     if (mv === chosenMv) actualEval = e;
   }
-  if (actualEval === null) return;
+  if (actualEval === null) return { turnScore: 1000 };
+
+  const turnScore = normalizedTurnScore(bestEval, worstEval, actualEval);
+  if (emptyBefore <= COACH_EXCLUDE_EMPTY) return { turnScore }; // coaching exclusion only
 
   const loss = actualEval - bestEval;
-  if (loss <= 0) return;
-  const weightedLoss = loss * coachingPhaseWeight(emptyBefore);
-  if (weightedLoss <= 0) return;
-
-  if (!worstPlayerMistake || weightedLoss > worstPlayerMistake.weightedLoss) {
-    worstPlayerMistake = {
-      loss,
-      weightedLoss,
-      bestMove,
-      actualMove: chosenMv,
-      boardP: Pcpu,
-      boardO: Oplayer,
-      bestEval,
-      actualEval,
-      emptyBefore,
-    };
+  if (loss > 0) {
+    const weightedLoss = loss * coachingPhaseWeight(emptyBefore);
+    if (weightedLoss > 0 && (!worstPlayerMistake || weightedLoss > worstPlayerMistake.weightedLoss)) {
+      worstPlayerMistake = {
+        loss,
+        weightedLoss,
+        bestMove,
+        actualMove: chosenMv,
+        boardP: Pcpu,
+        boardO: Oplayer,
+        bestEval,
+        actualEval,
+        emptyBefore,
+      };
+    }
   }
+
+  const avgEval = sumEval / moves.length;
+  const gain = avgEval - actualEval; // positive means better than average legal move
+  const isOpeningExcludedForGood = emptyBefore >= (60 - COACH_GOOD_EXCLUDE_OPENING_MOVES + 1); // first N moves
+  if (gain > 0 && !isOpeningExcludedForGood) {
+    const weightedGain = gain * coachingPhaseWeight(emptyBefore);
+    if (!bestPlayerGoodMove || weightedGain > bestPlayerGoodMove.weightedGain) {
+      bestPlayerGoodMove = {
+        gain,
+        weightedGain,
+        actualMove: chosenMv,
+        boardP: Pcpu,
+        boardO: Oplayer,
+        actualEval,
+        avgEval,
+        emptyBefore,
+      };
+    }
+  }
+  return { turnScore };
 }
 
-function renderCoachBoard(snapshot) {
-  coachBoardEl.innerHTML = "";
-  const { boardP, boardO, bestMove, actualMove } = snapshot;
+function renderSingleMoveBoard(boardElRef, snapshot, markClass, markMove) {
+  boardElRef.innerHTML = "";
+  const { boardP, boardO } = snapshot;
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
       const b = bitAt(x, y);
@@ -1127,25 +1301,36 @@ function renderCoachBoard(snapshot) {
         d.style.inset = "4px";
         cell.appendChild(d);
       }
-      if ((actualMove & b) !== 0n) {
+      if ((markMove & b) !== 0n) {
         const mark = document.createElement("div");
-        mark.className = "coach-mark actual";
+        mark.className = `coach-mark ${markClass}`;
         cell.appendChild(mark);
       }
-      if ((bestMove & b) !== 0n) {
-        const mark = document.createElement("div");
-        mark.className = "coach-mark best";
-        cell.appendChild(mark);
-      }
-      coachBoardEl.appendChild(cell);
+      boardElRef.appendChild(cell);
+    }
+  }
+}
+
+function renderCoachBoard(snapshot) {
+  renderSingleMoveBoard(coachBoardEl, snapshot, "actual", snapshot.actualMove);
+  // Add best marker on top of actual marker (if different squares).
+  for (let i = 0; i < coachBoardEl.children.length; i++) {
+    const cell = coachBoardEl.children[i];
+    const b = 1n << BigInt(i);
+    if ((snapshot.bestMove & b) !== 0n) {
+      const mark = document.createElement("div");
+      mark.className = "coach-mark best";
+      cell.appendChild(mark);
     }
   }
 }
 
 function showCoachingIfNeeded(playerWon, playerLost) {
-  const shouldShow = sontakuMode || (!sontakuMode && playerLost);
+  const sontaku = isSontakuMode(currentMode);
+  const shouldShow = sontaku || (!sontaku && playerLost);
   if (!shouldShow) {
     coachRow.style.display = "none";
+    coachGoodWrap.style.display = "none";
     return;
   }
   coachRow.style.display = "";
@@ -1153,50 +1338,71 @@ function showCoachingIfNeeded(playerWon, playerLost) {
   if (!worstPlayerMistake) {
     coachSummaryEl.textContent = "今回の対局では、大きな改善候補のある手は見つかりませんでした。";
     coachBoardEl.innerHTML = "";
-    return;
+  } else {
+    const m = worstPlayerMistake;
+    coachSummaryEl.textContent =
+      `この局面では下図の手が有力でした（評価差 ${m.loss.toFixed(1)}）。`;
+    renderCoachBoard(m);
   }
 
-  const m = worstPlayerMistake;
-  coachSummaryEl.textContent =
-    `この局面では下図の手が有力でした（評価差 ${m.loss.toFixed(1)}）。`;
-  renderCoachBoard(m);
+  if (!bestPlayerGoodMove) {
+    coachGoodWrap.style.display = "none";
+    coachGoodBoardEl.innerHTML = "";
+  } else {
+    const g = bestPlayerGoodMove;
+    coachGoodWrap.style.display = "";
+    coachGoodSummaryEl.textContent =
+      `この手は合法手平均より良好でした（平均差 +${g.gain.toFixed(1)}）。`;
+    renderSingleMoveBoard(coachGoodBoardEl, g, "good", g.actualMove);
+  }
 }
 
-function scrollToInfoPanelIfMobile() {
-  if (!infoPanel) return;
+function scrollToEndPositionIfMobile(playerLost) {
   if (window.matchMedia("(max-width: 720px)").matches) {
-    infoPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (playerLost && turnRow) {
+      turnRow.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (infoPanel) infoPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
 function syncModeLabel() {
-  modeText.textContent = `モード: ${sontakuMode ? "忖度モード" : "通常モード"}`;
+  modeText.textContent = `モード: ${modeLabel(currentMode)}`;
+}
+
+function syncModeUiVisibility() {
+  const visible = gameStarted;
+  modeText.style.display = visible ? "" : "none";
+  cpuGuideLink.style.display = visible ? "" : "none";
 }
 
 function setModeSelection(mode) {
-  modeSontaku.checked = mode === "sontaku";
-  modeNormal.checked = mode === "normal";
+  modeSontakuA.checked = mode === "sontakuA";
+  modeSontakuB.checked = mode === "sontakuB";
+  modeHonki.checked = mode === "honki";
 }
 
 function selectedModeValue() {
-  return modeSontaku.checked ? "sontaku" : "normal";
+  if (modeSontakuB.checked) return "sontakuB";
+  if (modeHonki.checked) return "honki";
+  return "sontakuA";
 }
 
 function openModeDialog(initial) {
   modeDialog.dataset.initial = initial ? "1" : "0";
   if (initial) {
-    modeDialogTitle.textContent = "モードを選んで開始";
+    modeDialogTitle.textContent = "忖度リバーシへようこそ！";
+    modeIntroText.style.display = "";
     modeApplyBtn.textContent = "開始";
     modeCancelBtn.style.display = "none";
-    resetAdWrap.style.display = "none";
-    setModeSelection("sontaku");
+    setModeSelection("sontakuA");
   } else {
     modeDialogTitle.textContent = "対局をリセット";
+    modeIntroText.style.display = "none";
     modeApplyBtn.textContent = "リセット";
     modeCancelBtn.style.display = "";
-    resetAdWrap.style.display = "";
-    setModeSelection(sontakuMode ? "sontaku" : "normal");
-    ensureResetAdLoaded();
+    setModeSelection(currentMode);
   }
   modeDialog.style.display = "flex";
   modeDialog.setAttribute("aria-hidden", "false");
@@ -1209,7 +1415,7 @@ function closeModeDialog() {
 
 function applyModeAndStart() {
   const mode = selectedModeValue();
-  sontakuMode = mode === "sontaku";
+  currentMode = mode;
   syncModeLabel();
   closeModeDialog();
   resetGame();
@@ -1270,9 +1476,24 @@ function ensureFooterAdLoaded() {
   tryLoadAd("footerLoaded");
 }
 
-function ensureResetAdLoaded() {
-  if (!resetAdUnit) return;
-  tryLoadAd("resetLoaded");
+function openCpuGuideDialog() {
+  cpuGuideDialog.style.display = "flex";
+  cpuGuideDialog.setAttribute("aria-hidden", "false");
+}
+
+function closeCpuGuideDialog() {
+  cpuGuideDialog.style.display = "none";
+  cpuGuideDialog.setAttribute("aria-hidden", "true");
+}
+
+function openCoachGuideDialog() {
+  coachGuideDialog.style.display = "flex";
+  coachGuideDialog.setAttribute("aria-hidden", "false");
+}
+
+function closeCoachGuideDialog() {
+  coachGuideDialog.style.display = "none";
+  coachGuideDialog.setAttribute("aria-hidden", "true");
 }
 
 function setRankingStatus() {
@@ -1280,11 +1501,7 @@ function setRankingStatus() {
     rankingStatusEl.textContent = "Firebase未設定のためランキング保存は無効です。";
     return;
   }
-  if (!sontakuMode) {
-    rankingStatusEl.textContent = "通常モードはランキング対象外です。";
-    return;
-  }
-  rankingStatusEl.textContent = "忖度モードで勝利したときのみ記録されます。低いほど忖度されずに勝ったことを示すので、良スコアです。";
+  rankingStatusEl.textContent = "勝利時に記録されます。高いほど良スコアで、最高スコアは1000です。";
 }
 
 function renderRankingList(entries) {
@@ -1317,13 +1534,13 @@ async function fetchWeeklyRanking() {
 
   const snap = await rankingDb.ref(`weeklyRankings/${week.key}`)
     .orderByChild("score")
-    .limitToFirst(20)
+    .limitToLast(20)
     .once("value");
 
   const rows = [];
   snap.forEach((child) => {
     const v = child.val() || {};
-    if (v.mode !== "sontaku" || v.won !== true) return;
+    if (v.won !== true) return;
     if (typeof v.score !== "number" || typeof v.ts !== "number") return;
     if (typeof v.name !== "string") return;
     rows.push({
@@ -1348,7 +1565,7 @@ function wouldRankTop5(score, nowTs, entries) {
 }
 
 async function trySubmitWeeklyRanking(score, black, white) {
-  if (!rankingDb || !sontakuMode) return;
+  if (!rankingDb) return;
 
   const nowTs = Date.now();
   const top = await fetchWeeklyRanking();
@@ -1361,7 +1578,7 @@ async function trySubmitWeeklyRanking(score, black, white) {
   await rankingDb.ref(`weeklyRankings/${rankingWeekKey}`).push({
     name: safeName,
     score: Number(score),
-    mode: "sontaku",
+    mode: currentMode,
     won: true,
     ts: nowTs,
   });
@@ -1377,11 +1594,13 @@ function resetGame() {
   P = bitAt(4,3) | bitAt(3,4); // White
   turn = 'BLACK';
   gameOver = false;
-  concessionState.total = 0;
-  concessionState.turns = 0;
+  scoreState.total = 0;
+  scoreState.turns = 0;
   concessionRow.style.display = 'none';
   coachRow.style.display = 'none';
+  coachGoodWrap.style.display = 'none';
   worstPlayerMistake = null;
+  bestPlayerGoodMove = null;
   gameStarted = true;
   lastAnim = null;
   render();
@@ -1402,8 +1621,10 @@ function render() {
   blackCount.textContent = String(black);
   whiteCount.textContent = String(white);
   syncModeLabel();
+  syncModeUiVisibility();
   if (concessionRow.style.display !== 'none') {
-    concessionTotalEl.textContent = String(Math.round(concessionState.total));
+    const finalScore = Math.floor(scoreState.turns > 0 ? (scoreState.total / scoreState.turns) : 0);
+    concessionTotalEl.textContent = String(finalScore);
   }
   setRankingStatus();
 
@@ -1479,16 +1700,15 @@ function endIfNoMoves() {
 
     const black = popcount64(O);
     const white = popcount64(P);
+    const finalScore = Math.floor(scoreState.turns > 0 ? (scoreState.total / scoreState.turns) : 0);
 
     if (black > white) {
-      // Player win: show concession score
+      // Player win: show score
       concessionRow.style.display = '';
-      concessionTotalEl.textContent = String(Math.round(concessionState.total));
+      concessionTotalEl.textContent = String(finalScore);
       log(`試合終了: 黒(あなた) ${black} - 白(CPU) ${white} で勝ち！`);
-      log(`あなたのスコア（CPU譲歩度）: ${Math.round(concessionState.total)}`);
-      if (sontakuMode) {
-        void trySubmitWeeklyRanking(Math.round(concessionState.total), black, white);
-      }
+      log(`あなたのスコア: ${finalScore}`);
+      void trySubmitWeeklyRanking(finalScore, black, white);
       showCoachingIfNeeded(true, false);
     } else if (black < white) {
       concessionRow.style.display = 'none';
@@ -1502,7 +1722,7 @@ function endIfNoMoves() {
       showCoachingIfNeeded(false, false);
     }
     render();
-    scrollToInfoPanelIfMobile();
+    scrollToEndPositionIfMobile(black < white);
     return true;
   }
   return false;
@@ -1538,7 +1758,9 @@ function onCellClick(e) {
 
   const movesBB = legalMoves(O, P);
   if ((movesBB & mv) === 0n) return;
-  maybeTrackPlayerMistake(P, O, mv, movesBB);
+  const playerEval = maybeTrackPlayerMistake(P, O, mv, movesBB);
+  scoreState.total += playerEval.turnScore;
+  scoreState.turns += 1;
 
   // Apply player's move: treat player as "P" in apply, but our stored is O=player, P=cpu
   // So for black's move, we compute flips vs white and update O/P accordingly.
@@ -1566,20 +1788,20 @@ function cpuMove() {
   }
 
   let r;
-  if (sontakuMode) {
-    r = chooseSontakuMove(P, O, concessionState);
+  if (isSontakuMode(currentMode)) {
+    r = chooseSontakuMove(P, O, currentMode);
   } else {
+    const occupied = popcount64(P | O);
     const moves = bitsToArray(movesBB);
-    let bestEval = -Infinity;
-    let bestMove = moves[0];
+    const candidates = [];
     for (const mv of moves) {
       const e = scoreMove(P, O, mv);
-      if (e > bestEval) {
-        bestEval = e;
-        bestMove = mv;
-      }
+      candidates.push({ mv, primary: e, eval: e });
     }
-    r = { move: bestMove, bestEval, chosenEval: bestEval, concession: 0 };
+    candidates.sort((a, b) => b.primary - a.primary);
+    const bestEval = candidates[0].eval;
+    const picked = maybePickSecondCandidate(candidates, occupied, true);
+    r = { move: picked.mv, bestEval, chosenEval: picked.eval, concession: 0 };
   }
   const mv = r.move;
 
@@ -1594,10 +1816,10 @@ function cpuMove() {
   O = next.O;
   lastAnim = { flipped, placed: mv, to: 'WHITE' };
 
-  if (sontakuMode) {
-    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  eval(best=${r.bestEval}, chosen=${r.chosenEval}, concede=+${r.concession.toFixed(1)})`);
+  if (isSontakuMode(currentMode)) {
+    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  mode=${modeLabel(currentMode)}, eval(best=${r.bestEval}, chosen=${r.chosenEval}, concede=+${r.concession.toFixed(1)})`);
   } else {
-    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  eval(best=${r.bestEval}, mode=normal)`);
+    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  mode=本気モード, eval(best=${r.bestEval})`);
   }
 
   turn = 'BLACK';
@@ -1610,6 +1832,11 @@ function cpuMove() {
 resetBtn.addEventListener('click', () => openModeDialog(false));
 modeApplyBtn.addEventListener('click', applyModeAndStart);
 modeCancelBtn.addEventListener('click', closeModeDialog);
+modeGuideLink.addEventListener('click', openCpuGuideDialog);
+cpuGuideLink.addEventListener('click', openCpuGuideDialog);
+cpuGuideCloseBtn.addEventListener('click', closeCpuGuideDialog);
+coachGuideLink.addEventListener('click', openCoachGuideDialog);
+coachGuideCloseBtn.addEventListener('click', closeCoachGuideDialog);
 rankingGuestBtn.addEventListener('click', () => resolveRankingDialog("ゲスト"));
 rankingSubmitBtn.addEventListener('click', () => {
   if (!validateRankingNameInput()) return;
