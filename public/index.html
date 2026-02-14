@@ -18,7 +18,8 @@
   <meta name="twitter:title" content="忖度リバーシ" />
   <meta name="twitter:description" content="ブラウザで無料プレイできるリバーシ。あなたの実力に応じて、CPUがちょうどいい塩梅で相手をしてくれます。" />
   <meta name="twitter:image" content="/ogp.png" />
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8846921424800179" crossorigin="anonymous"></script>
+  <!-- TODO: 広告審査通過後に復元 -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8846921424800179" crossorigin="anonymous"></script> -->
   <style>
     :root {
       --bg: #eef5f0;
@@ -371,11 +372,15 @@
       margin: 12px auto 0;
       padding: 0 4px 8px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      gap: 6px;
       font-size: 12px;
       color: #5f7264;
+    }
+    .site-footer-links {
+      display: flex;
+      gap: 16px;
     }
     .site-footer a {
       color: #2d8b57;
@@ -383,6 +388,9 @@
       font-weight: 700;
     }
     .site-footer a:hover { text-decoration: underline; }
+    .site-footer .copyright a {
+      font-weight: 400;
+    }
     .ranking-result {
       background: #f4faf6;
       border: 1px solid #d9e9de;
@@ -549,6 +557,7 @@
       </div>
     </div>
   </div>
+  <!-- TODO: 広告審査通過後に復元
   <footer class="footer-ad">
     <div class="ad-label">スポンサーリンク</div>
     <ins class="adsbygoogle"
@@ -559,10 +568,13 @@
       data-ad-format="auto"
       data-full-width-responsive="true"></ins>
   </footer>
+  -->
   <footer class="site-footer">
-    <div>© 2026, Shiromofu Factory</div>
-    <a href="/about.html">忖度リバーシについて</a>
-    <a href="/privacy.html">プライバシーポリシー</a>
+    <div class="site-footer-links">
+      <a href="/about.html">忖度リバーシについて</a>
+      <a href="/privacy.html">プライバシーポリシー</a>
+    </div>
+    <div class="copyright">© 2026, <a href="https://shiromofufactory.com/" target="_blank" rel="noopener noreferrer">Shiromofu Factory</a></div>
   </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1859,7 +1871,8 @@ if ('serviceWorker' in navigator) {
 }
 void fetchWeeklyRanking();
 render();
-ensureFooterAdLoaded();
+// TODO: 広告審査通過後に復元
+// ensureFooterAdLoaded();
 openModeDialog(true);
 </script>
 </body>
