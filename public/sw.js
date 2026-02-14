@@ -2,6 +2,7 @@ const CACHE_NAME = "sontaku-reversi-v1";
 const CORE_ASSETS = [
   "/",
   "/index.html",
+  "/about.html",
   "/privacy.html",
   "/manifest.webmanifest",
   "/favicon.svg",

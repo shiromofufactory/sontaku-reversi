@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>忖度リバーシについて | 忖度リバーシ</title>
+  <meta name="description" content="忖度リバーシの開発背景やコンセプトを紹介します。CPUがあなたの実力に合わせて対局し、ワンポイント指導で上達を助けるリバーシアプリです。" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="忖度リバーシについて" />
+  <meta property="og:description" content="忖度リバーシの開発背景やコンセプトを紹介します。CPUがあなたの実力に合わせて対局し、ワンポイント指導で上達を助けるリバーシアプリです。" />
+  <meta property="og:image" content="/ogp.png" />
+  <meta property="og:site_name" content="忖度リバーシ" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root {
+      --bg: #eef5f0;
+      --card: #ffffff;
+      --text: #1f2c24;
+      --muted: #5c6f62;
+      --line: #d8e5dc;
+      --accent: #2d8b57;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f1f8f3 0%, #eaf2ed 100%);
+    }
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 14px 36px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 26px rgba(19, 46, 30, 0.08);
+    }
+    h1 { margin: 0 0 14px; font-size: 28px; }
+    h2 { margin: 24px 0 10px; font-size: 20px; }
+    p { line-height: 1.85; color: #2e3c34; }
+    a { color: var(--accent); }
+    .nav-links { margin-top: 24px; font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>忖度リバーシについて</h1>
+
+      <h2>開発の背景</h2>
+      <p>
+        リバーシ、チェス、将棋といった有名な対戦型ボードゲームの中でも、リバーシはルールが比較的シンプルであるため、比較的単純なアルゴリズムでも平均的な実力な人間を容易に上回ることができるようになっています。
+      </p>
+      <p>
+        もちろん、意図的に弱くなるような実装もできるため、大半のコンピューターリバーシではCPUの強さを切り替えて調整できるようになっています。
+      </p>
+      <p>
+        ただ、人間の実力とCPUの実装方針によっては、自分に近しい、つまり「対局していて心地よく、強くなれる」と感じるレベルの対局がなかなかできないケースも出てきます。
+      </p>
+
+      <h2>コンセプト</h2>
+      <p>
+        「忖度リバーシ」は、CPUに人間といい勝負をするように振る舞い、かつ対局終了後に「この手はよかった」「ここはこうするほうが良かった」といったワンポイント指導を入れることで、ちょうどいい対局をしながらリバーシの実力を伸ばせるようなリバーシアプリを目指しました。
+      </p>
+
+      <div class="nav-links">
+        <a href="/">トップページ</a>
+        <a href="/privacy.html">プライバシーポリシー</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
