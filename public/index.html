@@ -305,6 +305,7 @@
     .modal h3 { margin: 0 0 8px; }
     .modal p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
     .mode-options { display: grid; gap: 8px; margin-bottom: 14px; }
+    .mode-options h4 { margin: 8px 0 0; }
     .mode-option {
       display: flex;
       align-items: center;
@@ -419,8 +420,8 @@
     <div class="board-pane">
       <div id="board" aria-label="reversi board"></div>
       <div class="row" id="turnRow"><b>手番:</b> <span id="turnLabel"></span></div>
-      <div class="row"><b>黒(あなた):</b> <span id="blackCount"></span>　
-        <b>白(CPU):</b> <span id="whiteCount"></span></div>
+      <div class="row"><b><span id="blackLabel">黒(あなた)</span>:</b> <span id="blackCount"></span>
+        <b><span id="whiteLabel">白(CPU)</span>:</b> <span id="whiteCount"></span></div>
       <div class="controls">
         <div class="mode-text" id="modeText"></div>
         <button class="guide-link" id="cpuGuideLink" type="button">CPUの仕組み（モードの説明）</button>
@@ -462,7 +463,13 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modeDialogTitle">
       <h3 id="modeDialogTitle">忖度リバーシへようこそ！</h3>
       <p class="ranking-note" id="modeIntroText">忖度リバーシは、あなたの強さに応じてCPUが忖度しながら対局してくれるCPU対戦型リバーシです。対局後にはワンポイント指導も表示します。</p>
+      <div class="mode-options" style="margin-top:10px;">
+        <h4>手番</h4>
+        <label class="mode-option"><input type="radio" name="turnSelect" id="turnFirst" value="first" checked /> 先手（黒）</label>
+        <label class="mode-option"><input type="radio" name="turnSelect" id="turnSecond" value="second" /> 後手（白）</label>
+      </div>
       <div class="mode-options">
+        <h4>モード</h4>
         <label class="mode-option"><input type="radio" name="modeSelect" id="modeSontakuA" value="sontakuA" checked /> 忖度モードA（あなたを勝たせる）</label>
         <label class="mode-option"><input type="radio" name="modeSelect" id="modeSontakuB" value="sontakuB" /> 忖度モードB（あなたより少し強い）</label>
         <label class="mode-option"><input type="radio" name="modeSelect" id="modeHonki" value="honki" /> 本気モード（手加減なし）</label>
@@ -1048,12 +1055,18 @@ function chooseSontakuMove(P, O, mode) {
   }
 
   let chosenMove, chosenEval;
+  const cornerMask = (1n << corners[0]) | (1n << corners[1]) | (1n << corners[2]) | (1n << corners[3]);
+  const emptyCorners = cornerMask & ~(P | O);
+
   if (mode === "sontakuB" && positiveCandidates.length) {
-    positiveCandidates.sort((a, b) => {
+    // 角を取れる手があれば最優先（角を取らないのは不自然）
+    const cornerCands = positiveCandidates.filter(c => (c.mv & emptyCorners) !== 0n);
+    const pool = cornerCands.length ? cornerCands : positiveCandidates;
+    pool.sort((a, b) => {
       if (a.eval !== b.eval) return a.eval - b.eval;
       return b.primary - a.primary;
     });
-    const picked = maybePickSecondCandidate(positiveCandidates, occupied, false);
+    const picked = maybePickSecondCandidate(pool, occupied, false);
     chosenMove = picked.mv;
     chosenEval = picked.eval;
   } else if (underOrZeroCandidates.length) {
@@ -1124,15 +1137,20 @@ const rankingNameInput = document.getElementById('rankingNameInput');
 const rankingNameError = document.getElementById('rankingNameError');
 const rankingGuestBtn = document.getElementById('rankingGuestBtn');
 const rankingSubmitBtn = document.getElementById('rankingSubmitBtn');
+const turnFirst = document.getElementById('turnFirst');
+const turnSecond = document.getElementById('turnSecond');
+const blackLabel = document.getElementById('blackLabel');
+const whiteLabel = document.getElementById('whiteLabel');
 
 const scoreState = { total: 0, turns: 0 };
 
-let P = 0n; // CPU (white)
-let O = 0n; // Player (black)
+let P = 0n; // White stones
+let O = 0n; // Black stones
 let turn = 'BLACK'; // BLACK then WHITE
 let gameOver = false;
 let lastAnim = null; // { flipped: BigInt, placed: BigInt, to: 'BLACK'|'WHITE' }
 let currentMode = "sontakuA";
+let playerIsBlack = true;
 let gameStarted = false;
 let weekTopEntries = [];
 let rankingWeekKey = "";
@@ -1141,6 +1159,13 @@ let bestPlayerGoodMove = null; // { gain, weightedGain, actualMove, boardP, boar
 const COACH_EXCLUDE_EMPTY = 10;
 const COACH_GOOD_EXCLUDE_OPENING_MOVES = 8;
 const adState = { footerLoaded: false };
+
+function isPlayerTurn() { return playerIsBlack ? (turn === 'BLACK') : (turn === 'WHITE'); }
+function isCpuTurn() { return !isPlayerTurn(); }
+function playerBB() { return playerIsBlack ? O : P; }
+function cpuBB() { return playerIsBlack ? P : O; }
+function playerColor() { return playerIsBlack ? 'BLACK' : 'WHITE'; }
+function cpuColor() { return playerIsBlack ? 'WHITE' : 'BLACK'; }
 
 function bitAt(x, y) {
   const idx = BigInt(x + y * 8);
@@ -1224,8 +1249,8 @@ function maybeTrackPlayerMistake(Pcpu, Oplayer, chosenMv, legalMovesBB) {
         weightedLoss,
         bestMove,
         actualMove: chosenMv,
-        boardP: Pcpu,
-        boardO: Oplayer,
+        boardP: P,
+        boardO: O,
         bestEval,
         actualEval,
         emptyBefore,
@@ -1236,15 +1261,17 @@ function maybeTrackPlayerMistake(Pcpu, Oplayer, chosenMv, legalMovesBB) {
   const avgEval = sumEval / moves.length;
   const gain = avgEval - actualEval; // positive means better than average legal move
   const isOpeningExcludedForGood = emptyBefore >= (60 - COACH_GOOD_EXCLUDE_OPENING_MOVES + 1); // first N moves
-  if (gain > 0 && !isOpeningExcludedForGood) {
+  const cornerMask = (1n << corners[0]) | (1n << corners[1]) | (1n << corners[2]) | (1n << corners[3]);
+  const isCornerMove = (chosenMv & cornerMask) !== 0n;
+  if (gain > 0 && !isOpeningExcludedForGood && !isCornerMove) {
     const weightedGain = gain * coachingPhaseWeight(emptyBefore);
     if (!bestPlayerGoodMove || weightedGain > bestPlayerGoodMove.weightedGain) {
       bestPlayerGoodMove = {
         gain,
         weightedGain,
         actualMove: chosenMv,
-        boardP: Pcpu,
-        boardO: Oplayer,
+        boardP: P,
+        boardO: O,
         actualEval,
         avgEval,
         emptyBefore,
@@ -1367,12 +1394,14 @@ function openModeDialog(initial) {
     modeApplyBtn.textContent = "開始";
     modeCancelBtn.style.display = "none";
     setModeSelection("sontakuA");
+    turnFirst.checked = true;
   } else {
     modeDialogTitle.textContent = "対局をリセット";
     modeIntroText.style.display = "none";
     modeApplyBtn.textContent = "リセット";
     modeCancelBtn.style.display = "";
     setModeSelection(currentMode);
+    if (playerIsBlack) { turnFirst.checked = true; } else { turnSecond.checked = true; }
   }
   modeDialog.style.display = "flex";
   modeDialog.setAttribute("aria-hidden", "false");
@@ -1386,6 +1415,7 @@ function closeModeDialog() {
 function applyModeAndStart() {
   const mode = selectedModeValue();
   currentMode = mode;
+  playerIsBlack = turnFirst.checked;
   syncModeLabel();
   closeModeDialog();
   resetGame();
@@ -1573,7 +1603,12 @@ function resetGame() {
   bestPlayerGoodMove = null;
   gameStarted = true;
   lastAnim = null;
+  blackLabel.textContent = playerIsBlack ? '黒(あなた)' : '黒(CPU)';
+  whiteLabel.textContent = playerIsBlack ? '白(CPU)' : '白(あなた)';
   render();
+  if (!playerIsBlack) {
+    setTimeout(cpuMove, 300);
+  }
 }
 
 function log(msg) {
@@ -1603,10 +1638,13 @@ function render() {
   } else if (gameOver) {
     turnLabel.textContent = '終了';
   } else {
-    turnLabel.textContent = (turn === 'BLACK') ? '黒（あなた）' : '白（CPU）';
+    const colorName = turn === 'BLACK' ? '黒' : '白';
+    const role = isPlayerTurn() ? 'あなた' : 'CPU';
+    turnLabel.textContent = `${colorName}（${role}）`;
   }
 
-  const movesBB = (!gameOver && turn === 'BLACK') ? legalMoves(O, P) : 0n;
+  const playerMovesBB = isPlayerTurn() ? legalMoves(playerBB(), cpuBB()) : 0n;
+  const movesBB = (!gameOver) ? playerMovesBB : 0n;
 
   boardEl.innerHTML = '';
   for (let y = 0; y < 8; y++) {
@@ -1670,29 +1708,32 @@ function endIfNoMoves() {
 
     const black = popcount64(O);
     const white = popcount64(P);
+    const playerCount = playerIsBlack ? black : white;
+    const cpuCount = playerIsBlack ? white : black;
+    const playerLabel = playerIsBlack ? '黒' : '白';
+    const cpuLabel = playerIsBlack ? '白' : '黒';
     const finalScore = Math.floor(scoreState.turns > 0 ? (scoreState.total / scoreState.turns) : 0);
 
-    if (black > white) {
-      // Player win: show score
+    if (playerCount > cpuCount) {
       concessionRow.style.display = '';
       concessionTotalEl.textContent = String(finalScore);
-      log(`試合終了: 黒(あなた) ${black} - 白(CPU) ${white} で勝ち！`);
+      log(`試合終了: ${playerLabel}(あなた) ${playerCount} - ${cpuLabel}(CPU) ${cpuCount} で勝ち！`);
       log(`あなたのスコア: ${finalScore}`);
       void trySubmitWeeklyRanking(finalScore, black, white);
       showCoachingIfNeeded(true, false);
-    } else if (black < white) {
+    } else if (playerCount < cpuCount) {
       concessionRow.style.display = 'none';
-      log(`試合終了: 黒(あなた) ${black} - 白(CPU) ${white} で負け…`);
+      log(`試合終了: ${playerLabel}(あなた) ${playerCount} - ${cpuLabel}(CPU) ${cpuCount} で負け…`);
       log(`（スコア表示は勝利時のみ）`);
       showCoachingIfNeeded(false, true);
     } else {
       concessionRow.style.display = 'none';
-      log(`試合終了: 引き分け ${black} - ${white}`);
+      log(`試合終了: 引き分け ${playerCount} - ${cpuCount}`);
       log(`（スコア表示は勝利時のみ）`);
       showCoachingIfNeeded(false, false);
     }
     render();
-    scrollToEndPositionIfMobile(black < white);
+    scrollToEndPositionIfMobile(playerCount < cpuCount);
     return true;
   }
   return false;
@@ -1701,46 +1742,54 @@ function endIfNoMoves() {
 function passIfNeeded() {
   if (gameOver) return;
 
-  if (turn === 'BLACK') {
-    const m = legalMoves(O, P);
+  if (isPlayerTurn()) {
+    const m = legalMoves(playerBB(), cpuBB());
     if (m === 0n) {
-      log('黒（あなた）はパス（打てる手がありません）');
-      turn = 'WHITE';
+      const colorName = playerColor() === 'BLACK' ? '黒' : '白';
+      log(`${colorName}（あなた）はパス（打てる手がありません）`);
+      turn = (turn === 'BLACK') ? 'WHITE' : 'BLACK';
       render();
       setTimeout(cpuMove, 0);
     }
   } else {
-    const m = legalMoves(P, O);
+    const m = legalMoves(cpuBB(), playerBB());
     if (m === 0n) {
-      log('白（CPU）はパス（打てる手がありません）');
-      turn = 'BLACK';
+      const colorName = cpuColor() === 'BLACK' ? '黒' : '白';
+      log(`${colorName}（CPU）はパス（打てる手がありません）`);
+      turn = (turn === 'BLACK') ? 'WHITE' : 'BLACK';
       render();
     }
   }
 }
 
 function onCellClick(e) {
-  if (!gameStarted || gameOver || turn !== 'BLACK') return;
+  if (!gameStarted || gameOver || !isPlayerTurn()) return;
 
   const x = Number(e.currentTarget.dataset.x);
   const y = Number(e.currentTarget.dataset.y);
   const mv = bitAt(x, y);
 
-  const movesBB = legalMoves(O, P);
+  const pBB = playerBB(), cBB = cpuBB();
+  const movesBB = legalMoves(pBB, cBB);
   if ((movesBB & mv) === 0n) return;
-  const playerEval = maybeTrackPlayerMistake(P, O, mv, movesBB);
+  const playerEval = maybeTrackPlayerMistake(cBB, pBB, mv, movesBB);
   scoreState.total += playerEval.turnScore;
   scoreState.turns += 1;
 
-  // Apply player's move: treat player as "P" in apply, but our stored is O=player, P=cpu
-  // So for black's move, we compute flips vs white and update O/P accordingly.
-  const f = flipsForMove(O, P, mv);
-  O = O | mv | f;
-  P = P & ~f;
-  lastAnim = { flipped: f, placed: mv, to: 'BLACK' };
+  const f = flipsForMove(pBB, cBB, mv);
+  const pColor = playerColor();
+  if (playerIsBlack) {
+    O = O | mv | f;
+    P = P & ~f;
+  } else {
+    P = P | mv | f;
+    O = O & ~f;
+  }
+  lastAnim = { flipped: f, placed: mv, to: pColor };
 
-  log(`黒が着手: (${String.fromCharCode(65 + x)}${y + 1})`);
-  turn = 'WHITE';
+  const colorName = pColor === 'BLACK' ? '黒' : '白';
+  log(`${colorName}(あなた)が着手: (${String.fromCharCode(65 + x)}${y + 1})`);
+  turn = (turn === 'BLACK') ? 'WHITE' : 'BLACK';
   render();
 
   if (endIfNoMoves()) return;
@@ -1748,9 +1797,10 @@ function onCellClick(e) {
 }
 
 function cpuMove() {
-  if (gameOver || turn !== 'WHITE') return;
+  if (gameOver || isPlayerTurn()) return;
 
-  const movesBB = legalMoves(P, O);
+  const cBB = cpuBB(), pBB = playerBB();
+  const movesBB = legalMoves(cBB, pBB);
   if (movesBB === 0n) {
     passIfNeeded();
     endIfNoMoves();
@@ -1759,13 +1809,13 @@ function cpuMove() {
 
   let r;
   if (isSontakuMode(currentMode)) {
-    r = chooseSontakuMove(P, O, currentMode);
+    r = chooseSontakuMove(cBB, pBB, currentMode);
   } else {
     const occupied = popcount64(P | O);
     const moves = bitsToArray(movesBB);
     const candidates = [];
     for (const mv of moves) {
-      const e = scoreMove(P, O, mv);
+      const e = scoreMove(cBB, pBB, mv);
       candidates.push({ mv, primary: e, eval: e });
     }
     candidates.sort((a, b) => b.primary - a.primary);
@@ -1776,23 +1826,30 @@ function cpuMove() {
   const mv = r.move;
 
   const idx = bitIndex(mv);
-
   const x = idx % 8;
   const y = Math.floor(idx / 8);
 
-  const next = applyMove(P, O, mv);
-  const flipped = flipsForMove(P, O, mv);
-  P = next.P;
-  O = next.O;
-  lastAnim = { flipped, placed: mv, to: 'WHITE' };
-
-  if (isSontakuMode(currentMode)) {
-    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  mode=${modeLabel(currentMode)}, eval(best=${r.bestEval}, chosen=${r.chosenEval}, concede=+${r.concession.toFixed(1)})`);
+  const f = flipsForMove(cBB, pBB, mv);
+  const cColor = cpuColor();
+  if (playerIsBlack) {
+    // CPU is white
+    P = P | mv | f;
+    O = O & ~f;
   } else {
-    log(`白(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  mode=本気モード, eval(best=${r.bestEval})`);
+    // CPU is black
+    O = O | mv | f;
+    P = P & ~f;
+  }
+  lastAnim = { flipped: f, placed: mv, to: cColor };
+
+  const colorName = cColor === 'BLACK' ? '黒' : '白';
+  if (isSontakuMode(currentMode)) {
+    log(`${colorName}(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  mode=${modeLabel(currentMode)}, eval(best=${r.bestEval}, chosen=${r.chosenEval}, concede=+${r.concession.toFixed(1)})`);
+  } else {
+    log(`${colorName}(CPU)が着手: (${String.fromCharCode(65 + x)}${y + 1})  mode=本気モード, eval(best=${r.bestEval})`);
   }
 
-  turn = 'BLACK';
+  turn = (turn === 'BLACK') ? 'WHITE' : 'BLACK';
   render();
 
   if (endIfNoMoves()) return;
