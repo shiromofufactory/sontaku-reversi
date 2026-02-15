@@ -20,31 +20,8 @@
   <meta name="twitter:image" content="/ogp.png" />
   <!-- TODO: 広告審査通過後に復元 -->
   <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8846921424800179" crossorigin="anonymous"></script> -->
+  <link rel="stylesheet" href="/common.css" />
   <style>
-    :root {
-      --bg: #eef5f0;
-      --panel: #ffffff;
-      --text: #1e2a22;
-      --muted: #5b6d60;
-      --board-dark: #1b6d3c;
-      --board-light: #278948;
-      --accent: #2d8b57;
-      --accent-strong: #1e7345;
-      --ring: rgba(45, 139, 87, 0.32);
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
-      margin: 0;
-      padding: 20px;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 15% 10%, #f8fcf9 0%, transparent 35%),
-        radial-gradient(circle at 90% 0%, #e4efe7 0%, transparent 32%),
-        linear-gradient(180deg, #f2f8f4 0%, #eaf2ed 100%);
-    }
-    h2 { margin: 0 0 16px; font-size: 34px; letter-spacing: 0.02em; }
-    .wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
     .board-pane {
       background: var(--panel);
       border-radius: 16px;
@@ -367,30 +344,6 @@
       padding: 8px 10px;
       box-shadow: 0 10px 24px rgba(19, 46, 30, 0.06);
     }
-    .site-footer {
-      max-width: 980px;
-      margin: 12px auto 0;
-      padding: 0 4px 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #5f7264;
-    }
-    .site-footer-links {
-      display: flex;
-      gap: 16px;
-    }
-    .site-footer a {
-      color: #2d8b57;
-      text-decoration: none;
-      font-weight: 700;
-    }
-    .site-footer a:hover { text-decoration: underline; }
-    .site-footer .copyright a {
-      font-weight: 400;
-    }
     .ranking-result {
       background: #f4faf6;
       border: 1px solid #d9e9de;
@@ -446,14 +399,22 @@
     }
 
     @media (max-width: 720px) {
-      h2 { font-size: 30px; }
-      body { padding: 14px; }
       .panel, .board-pane { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <h2>忖度リバーシ</h2>
+  <header class="site-header">
+    <h1 class="site-title">忖度リバーシ</h1>
+    <button class="menu-btn" aria-label="メニュー" aria-expanded="false">
+      <span class="menu-icon"></span>
+    </button>
+    <nav class="menu-nav" aria-hidden="true">
+      <a href="/" aria-current="page">トップページ</a>
+      <a href="/about.html">忖度リバーシについて</a>
+      <a href="/privacy.html">プライバシーポリシー</a>
+    </nav>
+  </header>
   <div class="wrap">
     <div class="board-pane">
       <div id="board" aria-label="reversi board"></div>
@@ -570,13 +531,10 @@
   </footer>
   -->
   <footer class="site-footer">
-    <div class="site-footer-links">
-      <a href="/about.html">忖度リバーシについて</a>
-      <a href="/privacy.html">プライバシーポリシー</a>
-    </div>
     <div class="copyright">© 2026, <a href="https://shiromofufactory.com/" target="_blank" rel="noopener noreferrer">Shiromofu Factory</a></div>
   </footer>
 
+<script src="/menu.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>

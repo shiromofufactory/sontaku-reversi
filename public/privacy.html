@@ -4,47 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>プライバシーポリシー | 忖度リバーシ</title>
-  <style>
-    :root {
-      --bg: #eef5f0;
-      --card: #ffffff;
-      --text: #1f2c24;
-      --muted: #5c6f62;
-      --line: #d8e5dc;
-      --accent: #2d8b57;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
-      color: var(--text);
-      background: linear-gradient(180deg, #f1f8f3 0%, #eaf2ed 100%);
-    }
-    .wrap {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 24px 14px 36px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 10px 26px rgba(19, 46, 30, 0.08);
-    }
-    h1 { margin: 0 0 14px; font-size: 28px; }
-    h2 { margin: 18px 0 8px; font-size: 18px; }
-    p, li { line-height: 1.7; color: #2e3c34; }
-    ul { margin: 0; padding-left: 20px; }
-    .meta { color: var(--muted); font-size: 13px; margin-top: 14px; }
-    a { color: var(--accent); }
-    .nav-links { margin-top: 24px; font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
-  </style>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/common.css" />
 </head>
 <body>
-  <main class="wrap">
+  <header class="site-header">
+    <h1 class="site-title">忖度リバーシ</h1>
+    <button class="menu-btn" aria-label="メニュー" aria-expanded="false">
+      <span class="menu-icon"></span>
+    </button>
+    <nav class="menu-nav" aria-hidden="true">
+      <a href="/">トップページ</a>
+      <a href="/about.html">忖度リバーシについて</a>
+      <a href="/privacy.html" aria-current="page">プライバシーポリシー</a>
+    </nav>
+  </header>
+  <main class="page-wrap">
+    <h2 class="page-title">プライバシーポリシー</h2>
     <section class="card">
-      <h1>プライバシーポリシー</h1>
       <p>
         忖度リバーシ（以下「本サービス」）は、利用状況の把握、広告配信、機能提供のために、必要な範囲で情報を取り扱います。
       </p>
@@ -92,11 +69,11 @@
       </p>
 
       <p class="meta">制定日: 2026年2月12日</p>
-      <div class="nav-links">
-        <a href="/">トップページ</a>
-        <a href="/about.html">忖度リバーシについて</a>
-      </div>
     </section>
   </main>
+  <footer class="site-footer">
+    <div class="copyright">© 2026, <a href="https://shiromofufactory.com/" target="_blank" rel="noopener noreferrer">Shiromofu Factory</a></div>
+  </footer>
+  <script src="/menu.js"></script>
 </body>
 </html>

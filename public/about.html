@@ -11,46 +11,23 @@
   <meta property="og:image" content="/ogp.png" />
   <meta property="og:site_name" content="忖度リバーシ" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <style>
-    :root {
-      --bg: #eef5f0;
-      --card: #ffffff;
-      --text: #1f2c24;
-      --muted: #5c6f62;
-      --line: #d8e5dc;
-      --accent: #2d8b57;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
-      color: var(--text);
-      background: linear-gradient(180deg, #f1f8f3 0%, #eaf2ed 100%);
-    }
-    .wrap {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 24px 14px 36px;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 10px 26px rgba(19, 46, 30, 0.08);
-    }
-    h1 { margin: 0 0 14px; font-size: 28px; }
-    h2 { margin: 24px 0 10px; font-size: 20px; }
-    p { line-height: 1.85; color: #2e3c34; }
-    a { color: var(--accent); }
-    .nav-links { margin-top: 24px; font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; }
-  </style>
+  <link rel="stylesheet" href="/common.css" />
 </head>
 <body>
-  <main class="wrap">
+  <header class="site-header">
+    <h1 class="site-title">忖度リバーシ</h1>
+    <button class="menu-btn" aria-label="メニュー" aria-expanded="false">
+      <span class="menu-icon"></span>
+    </button>
+    <nav class="menu-nav" aria-hidden="true">
+      <a href="/">トップページ</a>
+      <a href="/about.html" aria-current="page">忖度リバーシについて</a>
+      <a href="/privacy.html">プライバシーポリシー</a>
+    </nav>
+  </header>
+  <main class="page-wrap">
+    <h2 class="page-title">忖度リバーシについて</h2>
     <section class="card">
-      <h1>忖度リバーシについて</h1>
-
       <h2>開発の背景</h2>
       <p>
         リバーシ、チェス、将棋といった有名な対戦型ボードゲームの中でも、リバーシはルールが比較的シンプルであるため、比較的単純なアルゴリズムでも平均的な実力な人間を容易に上回ることができるようになっています。
@@ -66,12 +43,11 @@
       <p>
         「忖度リバーシ」は、CPUに人間といい勝負をするように振る舞い、かつ対局終了後に「この手はよかった」「ここはこうするほうが良かった」といったワンポイント指導を入れることで、ちょうどいい対局をしながらリバーシの実力を伸ばせるようなリバーシアプリを目指しました。
       </p>
-
-      <div class="nav-links">
-        <a href="/">トップページ</a>
-        <a href="/privacy.html">プライバシーポリシー</a>
-      </div>
     </section>
   </main>
+  <footer class="site-footer">
+    <div class="copyright">© 2026, <a href="https://shiromofufactory.com/" target="_blank" rel="noopener noreferrer">Shiromofu Factory</a></div>
+  </footer>
+  <script src="/menu.js"></script>
 </body>
 </html>

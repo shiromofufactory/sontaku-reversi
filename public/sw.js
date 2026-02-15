@@ -1,9 +1,11 @@
-const CACHE_NAME = "sontaku-reversi-v1";
+const CACHE_NAME = "sontaku-reversi-v2";
 const CORE_ASSETS = [
   "/",
   "/index.html",
   "/about.html",
   "/privacy.html",
+  "/common.css",
+  "/menu.js",
   "/manifest.webmanifest",
   "/favicon.svg",
   "/ogp.png",

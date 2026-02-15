@@ -1,0 +1,178 @@
+/* ===== CSS変数（統一） ===== */
+:root {
+  --bg: #eef5f0;
+  --panel: #ffffff;
+  --text: #1e2a22;
+  --muted: #5b6d60;
+  --board-dark: #1b6d3c;
+  --board-light: #278948;
+  --accent: #2d8b57;
+  --accent-strong: #1e7345;
+  --ring: rgba(45, 139, 87, 0.32);
+}
+
+/* ===== リセット・ベース ===== */
+* { box-sizing: border-box; }
+body {
+  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  margin: 0;
+  padding: 20px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 10%, #f8fcf9 0%, transparent 35%),
+    radial-gradient(circle at 90% 0%, #e4efe7 0%, transparent 32%),
+    linear-gradient(180deg, #f2f8f4 0%, #eaf2ed 100%);
+}
+a { color: var(--accent); }
+
+/* ===== サイトヘッダー ===== */
+.site-header {
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+.site-title {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: 0.02em;
+}
+
+/* --- ハンバーガーボタン --- */
+.menu-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  z-index: 101;
+}
+.menu-icon,
+.menu-icon::before,
+.menu-icon::after {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+.menu-icon {
+  position: relative;
+}
+.menu-icon::before,
+.menu-icon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+.menu-icon::before { top: -7px; }
+.menu-icon::after  { top:  7px; }
+
+/* 開いた状態: ×アイコン */
+.menu-btn[aria-expanded="true"] .menu-icon {
+  background: transparent;
+}
+.menu-btn[aria-expanded="true"] .menu-icon::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+.menu-btn[aria-expanded="true"] .menu-icon::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+/* --- メニュードロップダウン --- */
+.menu-nav {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid #d7e4db;
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(19, 46, 30, 0.12);
+  padding: 8px 0;
+  display: none;
+  flex-direction: column;
+  min-width: 220px;
+  z-index: 100;
+}
+.menu-nav[aria-hidden="false"] {
+  display: flex;
+}
+.menu-nav a {
+  display: block;
+  padding: 10px 18px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 120ms ease;
+}
+.menu-nav a:hover {
+  background: #f2f7f4;
+}
+.menu-nav a[aria-current="page"] {
+  color: var(--muted);
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ===== レイアウト ===== */
+.wrap {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid #d7e4db;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 10px 26px rgba(19, 46, 30, 0.08);
+}
+
+/* ===== サイトフッター ===== */
+.site-footer {
+  margin: 12px 0 0;
+  padding: 0 4px 8px;
+  display: flex;
+  justify-content: center;
+  font-size: 12px;
+  color: #5f7264;
+}
+.site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
+
+/* ===== サブページ用レイアウト ===== */
+.page-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+}
+.page-title {
+  margin: 0 0 14px;
+  font-size: 24px;
+}
+.page-wrap .card h2 { margin: 24px 0 10px; font-size: 20px; }
+.page-wrap .card h2:first-child { margin-top: 0; }
+.page-wrap .card p  { line-height: 1.85; color: #2e3c34; }
+.page-wrap .card li { line-height: 1.7; color: #2e3c34; }
+.page-wrap .card ul { margin: 0; padding-left: 20px; }
+.page-wrap .card .meta { color: var(--muted); font-size: 13px; margin-top: 14px; }
+
+/* ===== レスポンシブ ===== */
+@media (max-width: 720px) {
+  .site-title { font-size: 30px; }
+  body { padding: 14px; }
+}
